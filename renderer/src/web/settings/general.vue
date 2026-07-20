@@ -4,6 +4,7 @@
       <div class="flex-1 mb-1">{{ t(':language') }}</div>
       <select v-model="language" class="p-1 rounded bg-gray-700 w-24">
         <option value="en">English</option>
+        <option value="fr">Français</option>
         <option value="ru">Русский</option>
         <option value="cmn-Hant">正體中文</option>
         <option value="ko">한국어</option>
