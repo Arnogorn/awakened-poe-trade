@@ -155,29 +155,57 @@ function findItems (opts: {
   return out
 }
 
+// Builds every candidate full string for `name` from a quality regex.
+// Handles both shapes used across languages:
+//   prefix, single form:      /^Anomalous (.*)$/            -> ["Anomalous {name}"]
+//   suffix, alternation form: /^(.*) (?:a|b|c|d)$/           -> ["{name} a", "{name} b", ...]
+// (French/Russian-style gendered agreement produces the second shape - see
+// genderedSuffixRegex() in scripts/generate-fr-locale/generate-client-strings.mjs.)
+function qualityCandidates (re: RegExp, name: string): string[] {
+  const src = re.source.slice(1, -1) // strip ^ and $ anchors
+  const placeholderIdx = src.indexOf('(.*)')
+  const before = src.slice(0, placeholderIdx).trim()
+  const after = src.slice(placeholderIdx + '(.*)'.length).trim()
+
+  const expandGroup = (part: string): string[] => {
+    const alternation = part.match(/^\(\?:(.+)\)$/)
+    return alternation ? alternation[1].split('|') : [part]
+  }
+
+  const out: string[] = []
+  for (const b of expandGroup(before)) {
+    for (const a of expandGroup(after)) {
+      out.push([b, name, a].filter(Boolean).join(' '))
+    }
+  }
+  return out
+}
+
 function fuzzyFindHeistGem (badStr: string) {
   badStr = badStr.toLowerCase()
 
   const qualities = [
-    ['Anomalous', _$.QUALITY_ANOMALOUS.toString().slice(2, -2)],
-    ['Divergent', _$.QUALITY_DIVERGENT.toString().slice(2, -2)],
-    ['Phantasmal', _$.QUALITY_PHANTASMAL.toString().slice(2, -2)]
-  ]
+    ['Anomalous', _$.QUALITY_ANOMALOUS],
+    ['Divergent', _$.QUALITY_DIVERGENT],
+    ['Phantasmal', _$.QUALITY_PHANTASMAL]
+  ] as const
 
   let bestMatch: { name: string, altQuality: string }
   let minDist = Infinity
   for (const name of ALTQ_GEM_NAMES()) {
-    for (const [altQuality, reStr] of qualities) {
-      const exactStr = reStr.replace('(.*)', name).toLowerCase()
-      if (Math.abs(exactStr.length - badStr.length) > 5) {
-        continue
-      }
+    for (const [altQuality, re] of qualities) {
+      for (const candidate of qualityCandidates(re, name)) {
+        const exactStr = candidate.toLowerCase()
+        if (Math.abs(exactStr.length - badStr.length) > 5) {
+          continue
+        }
 
-      const dist = distance(badStr, exactStr)
-      if (dist < minDist) {
-        bestMatch = { name, altQuality }
-        if (dist === 0) return bestMatch
-        minDist = dist
+        const dist = distance(badStr, exactStr)
+        if (dist < minDist) {
+          bestMatch = { name, altQuality }
+          if (dist === 0) return bestMatch
+          minDist = dist
+        }
       }
     }
   }

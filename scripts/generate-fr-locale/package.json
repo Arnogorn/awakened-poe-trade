@@ -1,0 +1,15 @@
+{
+  "name": "generate-fr-locale",
+  "private": true,
+  "type": "module",
+  "description": "Maintenance scripts to (re)generate renderer/public/data/fr/*.ndjson from the local PoE game install. Not part of the app build.",
+  "scripts": {
+    "extract": "node extract-game-data.mjs",
+    "generate:items": "node generate-items.mjs",
+    "generate:stats": "node generate-stats.mjs",
+    "generate:all": "npm run extract && npm run generate:items && npm run generate:stats"
+  },
+  "dependencies": {
+    "pathofexile-dat": "^15.2.0"
+  }
+}
