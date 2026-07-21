@@ -161,17 +161,22 @@ function build () {
     HEIST_TARGET_PRICELESS: 'Priceless', // see report: no matching ClientStrings row found
     MIRRORED: cs('ItemPopupMirrored'),
     SPLIT: cs('ItemPopupSplit'),
-    MODIFIER_LINE: new RegExp(`^(?<type>[^"]+)(?:\\s+"(?<name>[^"]*)")?(?:\\s+\\(${TIER_WORD}: (?<tier>\\d+)\\))?(?:\\s+\\(${RANK_WORD}: (?<rank>\\d+)\\))?$`),
-    PREFIX_MODIFIER: cs('ModDescriptionLinePrefix').replace(' "{0}"', ''),
-    SUFFIX_MODIFIER: cs('ModDescriptionLineSuffix').replace(' "{0}"', ''),
-    CRAFTED_PREFIX: cs('ModDescriptionLineCrafted').replace('{0}', cs('ModDescriptionLinePrefix').replace(' "{0}"', '')),
-    CRAFTED_SUFFIX: cs('ModDescriptionLineCrafted').replace('{0}', cs('ModDescriptionLineSuffix').replace(' "{0}"', '')),
+    // French uses guillemets « » (not straight quotes) around the mod name,
+    // and a space before the colon in "(Palier : N)"/"(Rang : N)" - confirmed
+    // against a real crafted/rare item copied from the client (see PROJECT_CONTEXT.md).
+    MODIFIER_LINE: new RegExp(`^(?<type>[^«]+)(?:\\s*«\\s*(?<name>[^»]*?)\\s*»)?(?:\\s*\\(${TIER_WORD}\\s*:\\s*(?<tier>\\d+)\\))?(?:\\s*\\(${RANK_WORD}\\s*:\\s*(?<rank>\\d+)\\))?$`),
+    PREFIX_MODIFIER: cs('ModDescriptionLinePrefix').replace('« {0} »', ''),
+    SUFFIX_MODIFIER: cs('ModDescriptionLineSuffix').replace('« {0} »', ''),
+    CRAFTED_PREFIX: cs('ModDescriptionLineCrafted').replace('{0}', cs('ModDescriptionLinePrefix').replace('« {0} »', '')),
+    CRAFTED_SUFFIX: cs('ModDescriptionLineCrafted').replace('{0}', cs('ModDescriptionLineSuffix').replace('« {0} »', '')),
     IMPLICIT_MODIFIER: cs('ModDescriptionLineImplicit'),
     FRACTURED_PREFIX: 'Fractured Prefix Modifier', // see report: no matching ClientStrings row found
     FRACTURED_SUFFIX: 'Fractured Suffix Modifier', // see report
     UNSCALABLE_VALUE: ' — ' + cs('DescriptionLabelFixedValueStat').match(/\{ — (.+)\}\}$/)[1],
     CORRUPTED_IMPLICIT: cs('ModDescriptionLineCorruptedImplicit'),
-    MODIFIER_INCREASED: /^(.+?)% Increased$/, // see report
+    // ClientStrings "AlternateQualityModIncreaseText": EN " — {0}% Increased" ->
+    // FR " — Augmentation : {0}%" (confirmed real game text, not a guess).
+    MODIFIER_INCREASED: new RegExp('^' + cs('AlternateQualityModIncreaseText').replace(/^ — /, '').replace('{0}', '(.+?)') + '$'),
     INCURSION_OPEN: cs('ItemDescriptionIncursionAccessibleRooms'),
     INCURSION_OBSTRUCTED: cs('ItemDescriptionIncursionInaccessibleRooms'),
     EATER_IMPLICIT: new RegExp(`^${cs('ModDescriptionLineGreatTangleImplicit').replace(' ({0})', '')} \\((?<rank>.+)\\)$`),
@@ -234,7 +239,6 @@ const UNVERIFIED_KEYS = {
   HEIST_TARGET_PRICELESS: 'No ClientStrings row found matching "Priceless" - kept English.',
   FRACTURED_PREFIX: 'No ClientStrings row found for "Fractured Prefix Modifier" as one string - kept English (found "Fractured {0}" = "Fissuré {0}" and "Prefix Modifier" separately, but combining them is a guess, not confirmed).',
   FRACTURED_SUFFIX: 'Same as FRACTURED_PREFIX.',
-  MODIFIER_INCREASED: 'No literal English word left to translate in isolation ("% Increased" suffix) - kept as-is, low-impact (cosmetic parsing helper).',
   MODIFIER_LINE: 'Tier/Rank words substituted from LadderColumnRank ("Rang") and a compound-derived "Palier" - "Rang" is confirmed for leaderboard rank, not specifically confirmed for mod rank context. Verify against a real Eldritch-influenced item.',
   MAP_TIER: 'Uses "Palier" derived from the compound "Palier de Carte" (Map Tier), not a standalone-confirmed word.',
   CHAT_WHISPER_TO: 'Chat command prefixes ("@To"/"@From") not verified against a real French client - PoE chat commands are sometimes kept in English regardless of client language. Left as-is.',

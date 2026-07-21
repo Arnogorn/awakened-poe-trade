@@ -102,6 +102,7 @@ Quand on ajoute une langue au type `Config['language']` (`renderer/src/web/Confi
 - **Bugs corrigés en testant en jeu** :
   - `main/src/proxy.ts` et `renderer/src/web/Config.ts` : le français interrogeait `www.pathofexile.com` (catalogue anglais uniquement, echec "Unknown item name") au lieu de `fr.pathofexile.com` (site de trade dédié, catalogue déjà identique à nos traductions) ; `fr.pathofexile.com` manquait aussi de la liste blanche du proxy Electron. Les deux corrigés.
   - `renderer/src/web/item-search/WidgetItemSearch.vue` : `fuzzyFindHeistGem` reposait sur l'ancien format anglais à un seul mot pour les regex de qualité de gemme (Anomalous/Divergent/Phantasmal) ; généralisé pour supporter le nouveau format français à 4 formes (accord de genre/nombre).
+  - `scripts/generate-fr-locale/generate-client-strings.mjs` : deux regex de `client_strings.js` gardaient une syntaxe anglaise incompatible avec la ponctuation française, causant un vrai plantage (`item.parse_error`) sur certains objets. Voir section 9.6 pour le détail et le réflexe à avoir si ça se reproduit ailleurs.
 - **Dernière étape terminée** : étape 3 (parser d'objets fr), testée en jeu, prête à committer. Étape 2 (localisation UI complète) committée et pushée sur `origin/master`, commit `12babfa`.
 - **Prochaine tâche (à la reprise)** :
   1. Décider de la proposition de PR au mainteneur original (étape 5), ou continuer à affiner la couverture (stats Heist/Atlas restantes, section 9.3).
@@ -180,6 +181,16 @@ Contrairement à ce qui était supposé, presque tous ces points étaient déduc
 **Le plus gros morceau** : les fragments de noms générés pour les objets avec mod d'influence (`SHAPER_MODS`/`ELDER_MODS`/`CRUSADER_MODS`/`HUNTER_MODS`/`REDEEMER_MODS`/`WARLORD_MODS`/`DELVE_MODS`/`VEILED_MODS`/`INCURSION_MODS`, ex. "of Shaping", "The Shaper's"). Aucune de ces chaînes n'existe dans `ClientStrings` — viennent du système de génération de noms de `Mods.dat`, pas encore extrait. À vérifier en regardant un objet avec mod Shaper/Elder/etc en jeu ou sur le site de trade FR.
 
 Détail complet avec les raisons de chaque cas : `scripts/generate-fr-locale/untranslated-client-strings-fr.report.txt` et `untranslated-stats-fr.report.txt` (gitignorés, régénérés à chaque run).
+
+### 9.6 Bugs de ponctuation FR trouvés en testant en jeu (2026-07-21) — réflexe à avoir si ça se reproduit
+
+Deux regex dans `generate-client-strings.mjs` avaient été construites en copiant la forme du regex anglais, sans vérifier que la **ponctuation française réelle** correspondait. Résultat : un vrai plantage (`item.parse_error`, exception JS non rattrapée) sur certains objets, pas juste une mauvaise traduction. Trouvé grâce à des captures d'écran d'Arnaud montrant le texte brut copié en jeu (`{ Modificateur ... }`, activé via l'option "description de mod avancée" du client).
+
+**Cas 1 — `MODIFIER_INCREASED`** : comparait le texte contre `/^(.+?)% Increased$/` (anglais) alors que le texte réel est `"Augmentation : 20%"`. `.exec()` renvoyait `null`, et le code faisait `null![1]` → crash direct. Corrigé en dérivant le regex depuis `ClientStrings` (`AlternateQualityModIncreaseText`, confirmé : EN `" — {0}% Increased"` → FR `" — Augmentation : {0}%"`), pas deviné.
+
+**Cas 2 — `MODIFIER_LINE` / `PREFIX_MODIFIER` / `SUFFIX_MODIFIER` / `CRAFTED_PREFIX` / `CRAFTED_SUFFIX`** : le regex anglais utilise des guillemets droits `"..."` pour capturer le nom d'un mod préfixe/suffixe (`Prefix Modifier "of the Phoenix"`). Le texte français utilise des guillemets `« ... »` avec espace insécable (`Modificateur de préfixe : « du Phénix »`), **et** une espace avant les deux-points pour Palier/Rang (`(Palier : 8)` et non `(Palier: 8)`). Le `.replace(' "{0}"', '')` utilisé pour dériver les labels ne matchait donc jamais le texte français (`« {0} »`), laissant un `{0}` littéral non substitué dans les constantes. Corrigé : guillemets `«»` dans `MODIFIER_LINE`, `.replace('« {0} »', '')` pour dériver les labels, espaces flexibles (`\s*`) autour des deux-points.
+
+**Réflexe pour la suite** : toute regex dans `client_strings.js` qui contient encore une syntaxe anglaise en dur (guillemets droits `"`, deux-points sans espace, ponctuation ASCII) doit être considérée comme suspecte — le français a sa propre ponctuation (`« »`, espaces avant `:` `;` `?` `!`). Le seul moyen fiable de vérifier, c'est de regarder le texte brut réellement copié en jeu (pas de deviner depuis la version anglaise). Liste des clés encore non vérifiées : voir 9.5 et le rapport `untranslated-client-strings-fr.report.txt`.
 
 ---
 
