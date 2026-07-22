@@ -286,6 +286,70 @@ function translateMatcherString (matcher, textIndex) {
   return null
 }
 
+// Timeless Jewel "historic" mods (Foi militante/Vanité glorieuse/Fierté
+// fatale/Orgueil élégant/Retenue brutale/Tragédie héroïque - the 2-line
+// "commander" mod + "Passives in radius are Conquered by X"). `advanced`
+// can't be derived from `string` by splicing an annotation like every other
+// stat here (see deriveAdvancedText above): confirmed by Arnaud pasting real
+// advanced-mode clipboard text (client option "description de mod avancée")
+// for one commander per family, that the French client uses a genuinely
+// different sentence in advanced mode for 5 of the 6 families, not just
+// `string` + "(NameRange)" - e.g. Foi militante goes from "Gravé pour
+// glorifier..." (string) to "A été gravé à la gloire de..." (advanced), a
+// different verb entirely, not an insertion. Exhaustively searched: this
+// alternate wording doesn't exist anywhere in the extracted
+// StatDescriptions/*.txt files (only `string` does, verified char-for-char),
+// nor in Mods.dat (no free-text column), nor in the ReminderText table
+// (that one only covers the separate "(Conquered Passive Skills cannot be
+// modified...)" parenthetical, already handled fine by the parenthetical-
+// skipping logic in linesToStatStrings). No extractable source found, so
+// this is hand-transcribed from real screenshots (2026-07-22, one commander
+// captured per family in CapturePOE/<family>.png) and generalized to every
+// commander in that family - the "(NameRange)" annotation is family-constant
+// (verified identical across every commander of a family in en/stats.ndjson)
+// and the per-family sentence change (or lack thereof) is assumed constant
+// across a family's commanders, consistent with how `string` itself only
+// varies by the commander's name within a family.
+// Tragédie héroïque (Kalguur) is deliberately absent: its captured advanced
+// text was identical to `string` + a plain annotation splice, i.e. exactly
+// what deriveAdvancedText already produces - no override needed there.
+const TIMELESS_JEWEL_HISTORIC_ADVANCED = {
+  'Bathed in the blood of # sacrificed in the name of Ahuana':
+    'Baigné dans le sang de # sacrifiés au nom de Ahuana(Ahuana-Xibaqua)\nLes Talents dans le Rayon sont conquis par les Vaal',
+  'Bathed in the blood of # sacrificed in the name of Doryani':
+    'Baigné dans le sang de # sacrifiés au nom de Doryani(Ahuana-Xibaqua)\nLes Talents dans le Rayon sont conquis par les Vaal',
+  'Bathed in the blood of # sacrificed in the name of Xibaqua':
+    'Baigné dans le sang de # sacrifiés au nom de Xibaqua(Ahuana-Xibaqua)\nLes Talents dans le Rayon sont conquis par les Vaal',
+
+  'Carved to glorify # new faithful converted by High Templar Avarius':
+    'A été gravé à la gloire de # nouveaux croyants convertis par le Haut Templier Avarius(Avarius-Maxarius)\nLes Talents dans le Rayon sont conquis par les templiers',
+  'Carved to glorify # new faithful converted by High Templar Dominus':
+    'A été gravé à la gloire de # nouveaux croyants convertis par le Haut Templier Dominus(Avarius-Maxarius)\nLes Talents dans le Rayon sont conquis par les templiers',
+  'Carved to glorify # new faithful converted by High Templar Maxarius':
+    'A été gravé à la gloire de # nouveaux croyants convertis par le Haut Templier Maxarius(Avarius-Maxarius)\nLes Talents dans le Rayon sont conquis par les templiers',
+
+  'Commanded leadership over # warriors under Akoya':
+    'A dirigé # guerriers de Akoya(Akoya-Rakiata)\nLes Talents dans le Rayon sont conquis par les karuis',
+  'Commanded leadership over # warriors under Kaom':
+    'A dirigé # guerriers de Kaom(Akoya-Rakiata)\nLes Talents dans le Rayon sont conquis par les karuis',
+  'Commanded leadership over # warriors under Rakiata':
+    'A dirigé # guerriers de Rakiata(Akoya-Rakiata)\nLes Talents dans le Rayon sont conquis par les karuis',
+
+  'Commissioned # coins to commemorate Cadiro':
+    "A commandé # pièces pour commémorer Cadiro(Cadiro-Victario)\nLes Talents dans le Rayon sont conquis par l'Empire éternel",
+  'Commissioned # coins to commemorate Caspiro':
+    "A commandé # pièces pour commémorer Caspiro(Cadiro-Victario)\nLes Talents dans le Rayon sont conquis par l'Empire éternel",
+  'Commissioned # coins to commemorate Victario':
+    "A commandé # pièces pour commémorer Victario(Cadiro-Victario)\nLes Talents dans le Rayon sont conquis par l'Empire éternel",
+
+  'Denoted service of # dekhara in the akhara of Asenath':
+    "A commémoré le service de # dekharas de l'akhara de Asenath(Asenath-Nasima)\nLes Talents dans le Rayon sont conquis par les marakeths",
+  'Denoted service of # dekhara in the akhara of Balbala':
+    "A commémoré le service de # dekharas de l'akhara de Balbala(Asenath-Nasima)\nLes Talents dans le Rayon sont conquis par les marakeths",
+  'Denoted service of # dekhara in the akhara of Nasima':
+    "A commémoré le service de # dekharas de l'akhara de Nasima(Asenath-Nasima)\nLes Talents dans le Rayon sont conquis par les marakeths"
+}
+
 function main () {
   const blocks = loadAllBlocks()
   const textIndex = buildEnglishTextIndex(blocks)
@@ -298,8 +362,10 @@ function main () {
   const untranslated = []
   const pseudoLabelUsed = []
   let advancedDerived = 0
+  let advancedOverridden = 0
 
   function translateEntry (entry) {
+    const advancedOverride = TIMELESS_JEWEL_HISTORIC_ADVANCED[entry.ref]
     const newMatchers = entry.matchers.map(m => {
       totalMatchers++
       const result = translateMatcherString(m, textIndex)
@@ -312,6 +378,10 @@ function main () {
         if (result.advanced !== undefined) {
           newM.advanced = result.advanced
           advancedDerived++
+        }
+        if (advancedOverride !== undefined && m.advanced !== undefined) {
+          newM.advanced = advancedOverride
+          advancedOverridden++
         }
         return newM
       }
@@ -352,6 +422,7 @@ function main () {
     `      - "Added Small Passive Skills grant: {sub-stat}" via ClientStrings label + StatDescriptions template join: ${fromSmallPassiveGrant}`,
     `  - hand-translated "pseudo" trade-filter labels, NOT sourced from the game (see below, review these): ${fromPseudoLabel}`,
     `  - "advanced" (Advanced Mod Description mode) field re-derived alongside "string": ${advancedDerived}`,
+    `      - of which hand-transcribed from real screenshots (Timeless Jewel historic mods, see TIMELESS_JEWEL_HISTORIC_ADVANCED): ${advancedOverridden}`,
     '',
     '=== hand-translated pseudo labels - NOT verified against the real game/trade site, review before trusting ===',
     ...pseudoLabelUsed,
