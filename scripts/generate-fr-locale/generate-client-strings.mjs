@@ -90,7 +90,16 @@ function build () {
     ITEM_LEVEL: cs('ItemDisplayStringItemLevel') + ': ',
     CORPSE_LEVEL: cs('ItemDisplayCorpseLevel') + ': ',
     TALISMAN_TIER: cs('ItemDisplayStringTalismanTier') + ': ',
-    GEM_LEVEL: 'Niveau : ', // ClientStrings "Level:" (TutorialPanelGlossarySubtitle47) - see report
+    // Confirmed against a real gem copied from the client (2026-07-22,
+    // Arnaud, Awakened Arrow Nova Support): "Niveau: 5 (Maxi)" - no space
+    // before the colon, same convention as every other `cs(id) + ': '` label
+    // in this file (ITEM_LEVEL, RARITY, etc.), NOT the TutorialPanelGlossary
+    // wording that was hand-typed here before ("Niveau : " with a space).
+    // That wrong spacing made `parseGem`'s `section[1]?.startsWith(GEM_LEVEL)`
+    // check fail for every real French gem, which also skipped
+    // `parseQualityNested` (called only inside that same branch) - so this
+    // one typo broke both gem level AND gem quality parsing.
+    GEM_LEVEL: 'Niveau: ',
     STACK_SIZE: cs('ItemDisplayStackSize') + ': ',
     SOCKETS: cs('ItemDisplayStringSockets') + ': ',
     QUALITY: cs('Quality') + ': ',

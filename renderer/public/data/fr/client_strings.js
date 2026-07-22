@@ -23,7 +23,7 @@ export default {
   ITEM_LEVEL: "Niveau de l'objet: ",
   CORPSE_LEVEL: "Niveau du cadavre: ",
   TALISMAN_TIER: "Palier de Talisman: ",
-  GEM_LEVEL: "Niveau : ",
+  GEM_LEVEL: "Niveau: ",
   STACK_SIZE: "Taille de l'ensemble: ",
   SOCKETS: "Châsses: ",
   QUALITY: "Qualité: ",
