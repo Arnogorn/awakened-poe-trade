@@ -103,10 +103,15 @@ Quand on ajoute une langue au type `Config['language']` (`renderer/src/web/Confi
   - `main/src/proxy.ts` et `renderer/src/web/Config.ts` : le français interrogeait `www.pathofexile.com` (catalogue anglais uniquement, echec "Unknown item name") au lieu de `fr.pathofexile.com` (site de trade dédié, catalogue déjà identique à nos traductions) ; `fr.pathofexile.com` manquait aussi de la liste blanche du proxy Electron. Les deux corrigés.
   - `renderer/src/web/item-search/WidgetItemSearch.vue` : `fuzzyFindHeistGem` reposait sur l'ancien format anglais à un seul mot pour les regex de qualité de gemme (Anomalous/Divergent/Phantasmal) ; généralisé pour supporter le nouveau format français à 4 formes (accord de genre/nombre).
   - `scripts/generate-fr-locale/generate-client-strings.mjs` : deux regex de `client_strings.js` gardaient une syntaxe anglaise incompatible avec la ponctuation française, causant un vrai plantage (`item.parse_error`) sur certains objets. Voir section 9.6 pour le détail et le réflexe à avoir si ça se reproduit ailleurs.
-- **Dernière étape terminée** : étape 3 (parser d'objets fr), testée en jeu, prête à committer. Étape 2 (localisation UI complète) committée et pushée sur `origin/master`, commit `12babfa`.
+- **Dernière étape terminée** : étape 3 (parser d'objets fr), testée en jeu, committée sur `master` en local (commit `266ccdb`, **pas encore pushée**). Étape 2 (localisation UI complète) committée et pushée sur `origin/master`, commit `12babfa`.
+- **Dernière session (2026-07-22)** : voir section 9.7 pour le détail complet. Résumé :
+  - **Corrigé et confirmé en jeu** : stat Cluster Jewel `Added Small Passive Skills grant: #` (0% → 100% traduit) et reconstruction du champ `matchers[].advanced` (331/499 récupérés). Commit `266ccdb`.
+  - **Non résolu, à reprendre en premier** : le Timeless Jewel (mod "Carved to glorify... / Passives in radius...", conquérants Templiers/Karui/Vaal/etc.) reste affiché en 2 lignes "Not recognized modifier" séparées dans l'appli, alors que la donnée FR est prouvée correcte à 100% (vérifiée par trois sources indépendantes, voir 9.7). Cause racine encore inconnue après une session complète d'investigation. Probablement la même cause explique aussi la Tincture (mentionnée, pas encore investiguée).
+  - Un vrai bug a été repéré dans `renderer/src/assets/make-index-files.mjs` (indexe seulement `matcher.advanced` OU `matcher.string`, jamais les deux) mais son correctif n'a **pas résolu** le problème du Timeless Jewel — **revert fait à la demande d'Arnaud**, ne pas y retoucher sans son accord explicite.
 - **Prochaine tâche (à la reprise)** :
-  1. Décider de la proposition de PR au mainteneur original (étape 5), ou continuer à affiner la couverture (stats Heist/Atlas restantes, section 9.3).
-  2. Termes de lore de l'étape 1 (app_i18n.json, liste en section 4) toujours pas vérifiés avec le client PoE FR réel — non bloquant, à faire à l'occasion.
+  1. **Reprendre l'énigme du Timeless Jewel** (section 9.7) — c'est le blocage prioritaire, potentiellement lié à la Tincture aussi.
+  2. Décider de la proposition de PR au mainteneur original (étape 5), ou continuer à affiner la couverture (stats Heist/Atlas restantes, section 9.3).
+  3. Termes de lore de l'étape 1 (app_i18n.json, liste en section 4) toujours pas vérifiés avec le client PoE FR réel — non bloquant, à faire à l'occasion.
 - **Notes / points ouverts** :
   - Termes de lore de l'étape 1 (app_i18n.json) à vérifier avec le client PoE FR réel d'Arnaud (liste en section 4) — toujours pas fait.
   - `fr/items.ndjson`, `fr/stats.ndjson`, `fr/client_strings.js` contiennent maintenant de vraies données extraites du jeu (plus des copies anglaises comme à la fin de l'étape 1) — voir section 9 pour le détail et les limites connues.
@@ -191,6 +196,71 @@ Deux regex dans `generate-client-strings.mjs` avaient été construites en copia
 **Cas 2 — `MODIFIER_LINE` / `PREFIX_MODIFIER` / `SUFFIX_MODIFIER` / `CRAFTED_PREFIX` / `CRAFTED_SUFFIX`** : le regex anglais utilise des guillemets droits `"..."` pour capturer le nom d'un mod préfixe/suffixe (`Prefix Modifier "of the Phoenix"`). Le texte français utilise des guillemets `« ... »` avec espace insécable (`Modificateur de préfixe : « du Phénix »`), **et** une espace avant les deux-points pour Palier/Rang (`(Palier : 8)` et non `(Palier: 8)`). Le `.replace(' "{0}"', '')` utilisé pour dériver les labels ne matchait donc jamais le texte français (`« {0} »`), laissant un `{0}` littéral non substitué dans les constantes. Corrigé : guillemets `«»` dans `MODIFIER_LINE`, `.replace('« {0} »', '')` pour dériver les labels, espaces flexibles (`\s*`) autour des deux-points.
 
 **Réflexe pour la suite** : toute regex dans `client_strings.js` qui contient encore une syntaxe anglaise en dur (guillemets droits `"`, deux-points sans espace, ponctuation ASCII) doit être considérée comme suspecte — le français a sa propre ponctuation (`« »`, espaces avant `:` `;` `?` `!`). Le seul moyen fiable de vérifier, c'est de regarder le texte brut réellement copié en jeu (pas de deviner depuis la version anglaise). Liste des clés encore non vérifiées : voir 9.5 et le rapport `untranslated-client-strings-fr.report.txt`.
+
+---
+
+### 9.7 Session du 2026-07-22 : correctifs `stats.ndjson`, et énigme non résolue du Timeless Jewel
+
+> **À lire en premier à la reprise.** Cette session a fait deux vrais correctifs (confirmés en jeu) puis a passé le plus clair du temps sur une énigme non résolue. Section écrite pour éviter de repartir de zéro ou de retester des pistes déjà mortes.
+
+#### État exact du repo à la fin de la session (important, pour ne pas se mélanger)
+
+- **Commit `266ccdb` fait, en local, PAS pushé sur `origin`.** Contient uniquement : `scripts/generate-fr-locale/generate-stats.mjs` (deux nouvelles fonctions, voir 9.7.1 et 9.7.2) + `renderer/public/data/fr/stats.ndjson` régénéré. `git log --oneline -1` doit montrer ce commit en HEAD.
+- **`renderer/src/assets/make-index-files.mjs` est revenu à sa version d'origine** (le fix testé en 9.7.3 a été **annulé** via `git checkout --`, à la demande d'Arnaud — le fichier ne doit montrer AUCUNE modification par rapport à `origin/master`). Les `.index.bin` locaux ont été régénérés avec ce code d'origine juste après le revert, donc l'état sur disque est cohérent avec le commit `266ccdb`.
+- Les deux serveurs de dev (`renderer` port 5173 + `main`) ont été relancés à froid plusieurs fois pendant la session ; rien n'indique qu'il faille les retoucher à la reprise, un simple `npm run dev` dans les deux dossiers suffit (voir DEVELOPING.md / section 5 de ce fichier).
+- Aucun fichier de script de test temporaire n'a été laissé dans le repo (vérifié par `git status --short` propre en fin de session).
+
+#### 9.7.1 Corrigé et confirmé en jeu par Arnaud : stat Cluster Jewel `Added Small Passive Skills grant: #`
+
+Cette stat (implicite de Cluster Jewel, ex. "Added Small Passive Skills grant: 12% increased Fire Damage") était à 0% de couverture FR. Contrairement aux autres stats de ce fichier, elle n'est pas un template `#`-classique dans `StatDescriptions.txt` : c'est l'assemblage à l'exécution d'un label `ClientStrings` (`StatDescripotionTreeExpansionJewelGrantedSmallStat`, EN `"Added Small Passive Skills grant: {0}"` → FR `"Les Passifs mineurs ajoutés octroient: {0}"`, confirmé identique à une capture d'écran réelle d'Arnaud) autour du texte d'un sous-stat ordinaire (ex. `"12% increased Fire Damage"`). Comme `en/stats.ndjson` stocke cette stat avec des matchers **concrets** (une valeur numérique déjà substituée par variante) plutôt qu'un `ref` templaté en `#`, il fallait normaliser les nombres du texte anglais en `#` pour retrouver le bon template dans l'index `StatDescriptions`, puis réinjecter les nombres d'origine dans le texte FR trouvé. Nouvelle fonction `translateSmallPassiveGrant` dans `generate-stats.mjs`. Résultat : 54/54 variantes traduites, testé en jeu par Arnaud sur un vrai objet, confirmé fonctionnel ("bien joué").
+
+#### 9.7.2 Corrigé, non testé en jeu (mais logique vérifiée) : reconstruction du champ `matchers[].advanced`
+
+Découverte indépendante : `matchers[].advanced` (texte utilisé quand l'option client "description de mod avancée" est active — Arnaud l'a activée) n'était **jamais traduit** par le pipeline, ni avant ni après le fix 9.7.1 : `translateEntry` faisait `{ ...m, string: result.text }`, qui recopie l'ancien `advanced` anglais tel quel. Sur les 499 matchers de `en/stats.ndjson` qui ont un champ `advanced`, 480 sont une simple insertion d'une annotation `(RangeDébut-RangeFin)` à un seul endroit dans le texte de `string` (ex. `"...Templar Maxarius"` → `"...Templar Maxarius(Avarius-Maxarius)"` ; idem pour les noms de gemmes `# to Level of all X Gems` → annotation `(Fireball-Divine Blast)` constante). Nouvelle fonction générique `deriveAdvancedText` dans `generate-stats.mjs` : calcule le préfixe/suffixe commun entre `string` et `advanced` anglais pour isoler l'annotation, retrouve le même point d'ancrage (un nom propre non traduit, ou — pour les gemmes — le nom FR déjà connu via la table `gemNames` existante) dans le texte FR déjà traduit, et réinjecte l'annotation anglaise telle quelle à cet endroit (les noms propres du jeu ne sont pas traduits en français, vérifié sur plusieurs exemples). Résultat : 331/499 champs `advanced` récupérés (les ~150 restants ont plusieurs points d'insertion, modèle trop complexe, laissés inchangés — pas de régression, comportement identique à avant).
+
+**Cette fonctionnalité n'a PAS été confirmée comme la cause du problème du Timeless Jewel** (voir 9.7.4) — elle reste un correctif valable en soi (le champ était objectivement faux avant), mais ne pas supposer qu'elle résout quoi que ce soit d'autre tant que ce n'est pas testé isolément.
+
+#### 9.7.3 Bug réel trouvé, correctif testé puis ANNULÉ : `make-index-files.mjs`
+
+En lisant `renderer/src/assets/make-index-files.mjs`, découverte que la construction de l'index rapide de recherche (`stats-matcher.index.bin`, utilisé par `STAT_BY_MATCH_STR_V2`) n'indexe **qu'un seul** des deux textes possibles d'un matcher :
+
+```js
+if (matcher.advanced) {
+  lineStarts.matchers.push({ hash: fnv1a(matcher.advanced) })
+} else {
+  lineStarts.matchers.push({ hash: fnv1a(matcher.string) })
+}
+```
+
+Alors que le code de comparaison plus loin (`stat-translations.ts`, `m.string === matchStr || m.advanced === matchStr`) montre clairement que les deux formes devraient être trouvables. Concrètement : dès qu'un matcher a un champ `advanced`, son texte `string` normal devient invisible pour la recherche rapide, même s'il est présent dans les données. **Ce bug est réel et vérifié par simulation directe de l'algorithme de recherche** (script Node reproduisant `dataBinarySearch` + `fnv1a`), mais touche potentiellement l'anglais aussi (pas spécifique au français) et n'est **pas prouvé être la cause** du problème 9.7.4 : le fix (indexer les deux) a été appliqué, les `.bin` régénérés, l'appli relancée à froid, et **le Timeless Jewel n'a montré aucun changement**. Arnaud a demandé d'annuler ce changement pour l'instant (fait, voir état du repo ci-dessus) — **ne pas le réappliquer sans son accord explicite**, mais le garder en tête, c'est un vrai défaut du code même s'il n'explique pas (ou pas seul) le bug du Timeless Jewel.
+
+#### 9.7.4 NON RÉSOLU — le Timeless Jewel (et probablement la Tincture) : la ligne "Carved to glorify.../Passives in radius..." reste affichée en 2 blocs séparés "Not recognized modifier" au lieu d'un seul, malgré une donnée FR prouvée correcte à 100%
+
+**Symptôme** : sur un Timeless Jewel réel (ex. "Foi militante" / Militant Faith, conquérant Maxarius/Avarius/Dominus), le mod à deux lignes suivant :
+```
+Gravé pour glorifier # nouveaux croyants convertis par le Haut Templier <Nom>
+Les Talents passifs dans le Rayon sont Conquis par les Templiers
+```
+s'affiche dans l'appli comme **2 encarts distincts "Not recognized modifier"** au lieu d'un seul mod reconnu (comme en anglais, où les 2 lignes équivalentes fusionnent bien en un seul mod reconnu).
+
+**Ce qui est prouvé correct (ne pas revérifier, c'est fait, à fond)** :
+- Le texte FR exact stocké dans `fr/stats.ndjson` pour ce ref (`Carved to glorify # new faithful converted by High Templar <Nom>`) correspond **caractère pour caractère** (après normalisation du nombre en `#`) au texte brut réel copié par Arnaud en jeu (vérifié deux fois, via Bloc-notes et collage direct).
+- Le même texte FR correspond aussi, **caractère pour caractère**, à des annonces réelles d'autres joueurs consultées sur le site de trade (`explicitMods[].description` de l'API `pathofexile.com/api/trade`, hash `stat.explicit.pseudo_timeless_jewel_<nom>` identique à notre `trade.ids`).
+- La fenêtre de dev actuellement lancée (celle qu'Arnaud teste, DevTools attaché confirmé) a bien chargé cette donnée à jour (vérifié en tapant `fetch('/data/fr/stats.ndjson').then(...)` directement dans la Console DevTools de cette fenêtre — le texte trouvé est le bon, avec `advanced` du fix 9.7.2 inclus).
+- Donc : **ce n'est définitivement pas un problème de contenu de traduction.** Le bug est ailleurs, dans la façon dont l'appli regroupe/matche les lignes du presse-papier.
+
+**Pistes explorées et éliminées (ne pas les retester, c'est déjà fait)** :
+- Cache navigateur/Electron : "Disable cache" DevTools déjà coché depuis avant la session, aucun effet. Redémarrages à froid des deux process (`renderer` + `main`) faits plusieurs fois, aucun effet.
+- Fenêtre de dev différente de celle testée par Arnaud : éliminé, DevTools détaché confirmé présent (signature de notre build de dev).
+- `advanced-mod-desc.ts` / `groupLinesByMod` / tags `{...}` de la "description de mod avancée" : le presse-papier brut réel de ce Timeless Jewel **ne contient aucune ligne `{...}`** (confirmé deux fois par Arnaud, dont une fois via Bloc-notes). Cette voie de code (qui gère le format avancé) n'est donc probablement pas concernée pour ce type d'objet (unique à mods fixes, pas de tier/rang à révéler). Donc `parseModifiers` devrait passer par la branche `else` (`parseModType`) — mais celle-ci lève une exception si aucune ligne ne finit par ` (enchant)`/` (scourge)`/` (implicit)`, ce qui n'est pas non plus le cas ici. **Contradiction non résolue** : sur le papier (code lu très précisément, et reproduit dans un harnais Node autonome qui exécute le VRAI code du parser via esbuild), `parseModifiers` devrait renvoyer `SECTION_SKIPPED` pour ce bloc de 5 lignes dans les 4 passes (enchant/scourge/implicit/explicit), ce qui voudrait dire que ces lignes ne devraient MÊME PAS apparaître comme "non reconnues" — or elles apparaissent bien, visiblement, dans l'appli réelle.
+- Bug d'indexation `make-index-files.mjs` (9.7.3) : fix testé, aucun effet observé, annulé.
+- Différence entre la formulation utilisée par le champ de recherche du site de trade FR ("A été sculpté afin de glorifier...") et le texte réel en jeu ("Gravé pour glorifier...") : **c'est une incohérence de traduction propre à GGG entre leur catalogue de recherche web et le texte réel du client de jeu**, sans rapport avec notre travail — le `ref`/`matchers` de notre repo suit la même convention qu'en anglais (`ref` = 1ère ligne seulement, `matchers.string` = texte complet des 2 lignes). Ne pas essayer de faire correspondre notre traduction à la formulation du site de recherche, ce serait une erreur.
+- Test isolé via la Console DevTools de l'appli réelle (`const { parseClipboard } = await import('/src/parser/index.ts'); parseClipboard(texteComplet)`) : a renvoyé `item.unknown` (échec d'identification de l'objet lui-même, avant même d'arriver aux mods) — mais Arnaud confirme que **la reconnaissance des objets uniques fonctionne normalement dans l'appli en usage réel** (testé sur 10-15 objets uniques différents, tous OK). Donc ce `item.unknown` est un artefact de la méthode de test via la console (probablement lié à la façon dont le texte est passé/évalué dans la console, pas un vrai bug de l'appli) — **ne pas perdre de temps à creuser cette fausse piste `item.unknown`/`findInDatabase`/`ITEM_BY_REF` à la reprise**, c'est un faux positif de la méthode de test, pas un vrai problème.
+
+**Pistes pas encore essayées, à explorer en premier à la reprise** :
+1. Reprendre le harnais Node autonome (bundle esbuild du vrai `Parser.ts` + dépendances, exécuté en Node avec `fetch` pointé sur `localhost:5173` et les deux imports dynamiques de `client_strings.js` patchés en `file://`) — la recette complète a été mise au point pendant cette session mais les fichiers de test ont été supprimés en fin de session (pas commités, c'était voulu). La reconstruire est rapide si besoin. Elle a permis de tracer précisément que les 4 appels à `parseModifiers` renvoient `SECTION_SKIPPED` pour ce bloc — il faudrait comprendre POURQUOI l'appli réelle affiche quand même 2 encarts "non reconnu" alors que ce code dit qu'elle ne devrait rien afficher du tout. Peut-être qu'il manque un mécanisme de secours ailleurs dans le code (un widget qui scanne les lignes indépendamment de `parseClipboard`), à chercher spécifiquement.
+2. Vérifier si la Tincture (mentionnée par Arnaud mais jamais testée cette session) a exactement le même symptôme — si oui, ça aidera à isoler ce qui est commun aux deux plutôt que de chercher un truc spécifique aux Timeless Jewels.
+3. Comparer avec un mod à 2 lignes qui, lui, fonctionne bien en français (s'il en existe un dans les données déjà traduites) pour voir ce qui structurellement diffère du cas Timeless Jewel.
 
 ---
 
