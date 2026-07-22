@@ -105,11 +105,12 @@ Quand on ajoute une langue au type `Config['language']` (`renderer/src/web/Confi
   - `scripts/generate-fr-locale/generate-client-strings.mjs` : deux regex de `client_strings.js` gardaient une syntaxe anglaise incompatible avec la ponctuation française, causant un vrai plantage (`item.parse_error`) sur certains objets. Voir section 9.6 pour le détail et le réflexe à avoir si ça se reproduit ailleurs.
   - **Timeless Jewel "Not recognized modifier" (session 2026-07-22, résolu)** : voir section 9.7/9.8 pour le détail complet. Cause racine : le texte "mode avancé" (`matchers[].advanced`) que le client français affiche pour les 6 mods "historiques" de Joyau intemporel n'est PAS une simple annotation insérée dans le texte normal (contrairement à l'anglais et à la quasi-totalité des autres stats) — c'est une phrase entièrement différente, non extractible d'aucune donnée du jeu accessible (`StatDescriptions.txt`, `Mods.dat`, `ReminderText` tous vérifiés, vides sur ce point). Corrigé en transcrivant à la main le vrai texte depuis des captures d'écran réelles d'Arnaud (une par famille), table `TIMELESS_JEWEL_HISTORIC_ADVANCED` dans `generate-stats.mjs`. **Confirmé fonctionnel en jeu par Arnaud le 2026-07-22** pour les 5 familles concernées (Foi militante, Vanité glorieuse, Fierté fatale, Orgueil élégant, Retenue brutale). Tragédie héroïque n'avait pas besoin de correctif (son texte avancé était déjà correct via la logique générique existante). Commit `3e0d579`, pushé sur `origin/master`.
   - **Tincture "Not recognized modifier" (session 2026-07-22, résolu)** : symptôme similaire au Timeless Jewel (2 stats non reconnues sur une Teinture Prismatique) mais cause totalement différente et bien plus simple — `Metadata/StatDescriptions/tincture_stat_descriptions.txt` est un 13ᵉ fichier qui existe dans le jeu mais n'avait jamais été ajouté à la liste de fichiers extraits (ni dans `extract-game-data.mjs` ni dans les candidats de `probe-stat-description-files.mjs`). Trouvé en élargissant la sonde à des noms de fichiers plausibles ("tincture_stat_descriptions.txt" a matché du premier coup). Contient les 2 stats manquantes (`#% increased Elemental Damage with Melee Weapons`, `Gain # Mana per Enemy Killed with Melee Weapons`), maintenant traduites via l'extraction/génération normale, aucune donnée à transcrire à la main (contrairement au Timeless Jewel). **Confirmé fonctionnel en jeu par Arnaud le 2026-07-22.**
-- **Dernière étape terminée** : étape 3 (parser d'objets fr), testée en jeu. Étape 2 (localisation UI complète) committée et pushée sur `origin/master`, commit `12babfa`. Correctifs Timeless Jewel et Tincture du 2026-07-22 committés et pushés sur `origin/master`.
+  - **Carquois "#% increased Damage with Bow Skills" non reconnu (session 2026-07-22, résolu)** : vrai bug de parsing (pas une donnée manquante) dans `parse-stat-descriptions.mjs`. Le bloc `damage_+%_with_bow_skills` de `stat_descriptions.txt` écrit son placeholder de valeur en `{}` (accolades vides) au lieu de `{0}` — seul cas de ce genre trouvé pour l'instant, mais le motif `{}` apparaît ~394 fois dans le fichier combiné, donc potentiellement d'autres blocs concernés. L'ancienne regex de conversion placeholder→`#` exigeait au moins un chiffre (`\{\d+...\}`) et ignorait donc `{}`, laissant le texte indexé avec des accolades littérales au lieu de `#` — recherche par `textIndex.get()` ratée en silence, fallback anglais. Corrigé en rendant le chiffre optionnel (`\{\d*...\}`). Couverture globale passée de 86.8% à 87.6% (+82 matchers) rien qu'avec ce fix, confirmant que d'autres stats étaient touchées par le même bug. **Confirmé fonctionnel en jeu par Arnaud le 2026-07-22.**
+- **Dernière étape terminée** : étape 3 (parser d'objets fr), testée en jeu. Étape 2 (localisation UI complète) committée et pushée sur `origin/master`, commit `12babfa`. Correctifs Timeless Jewel, Tincture et placeholder `{}` du 2026-07-22 committés et pushés sur `origin/master`.
 - **Prochaine tâche (à la reprise)** :
   1. Décider de la proposition de PR au mainteneur original (étape 5), ou continuer à affiner la couverture (stats Heist/Atlas restantes, section 9.3).
   2. Termes de lore de l'étape 1 (app_i18n.json, liste en section 4) toujours pas vérifiés avec le client PoE FR réel — non bloquant, à faire à l'occasion.
-  3. Vérifier si d'autres fichiers `StatDescriptions` restent manquants au-delà de `tincture_stat_descriptions.txt` — le candidat était absent des deux listes probées jusqu'ici (session 07-21 et 07-22), donc la couverture actuelle (86.8%) pourrait encore progresser en creusant ce genre de piste plutôt qu'en devinant depuis les cas restants du rapport `untranslated-stats-fr.report.txt`.
+  3. Vérifier si d'autres fichiers `StatDescriptions` restent manquants au-delà de `tincture_stat_descriptions.txt` — le candidat était absent des deux listes probées jusqu'ici (session 07-21 et 07-22), donc la couverture actuelle (87.6%) pourrait encore progresser en creusant ce genre de piste plutôt qu'en devinant depuis les cas restants du rapport `untranslated-stats-fr.report.txt`.
 - **Notes / points ouverts** :
   - Termes de lore de l'étape 1 (app_i18n.json) à vérifier avec le client PoE FR réel d'Arnaud (liste en section 4) — toujours pas fait.
   - `fr/items.ndjson`, `fr/stats.ndjson`, `fr/client_strings.js` contiennent maintenant de vraies données extraites du jeu (plus des copies anglaises comme à la fin de l'étape 1) — voir section 9 pour le détail et les limites connues.
@@ -301,6 +302,33 @@ Symptôme rapporté par Arnaud sur une Teinture Prismatique : 2 mods affichés "
 Couverture globale `stats.ndjson` passée de 86.2% à 86.8% (+60 matchers, la plupart probablement d'autres stats Tincture qui traînaient aussi dans le rapport sans avoir été spécifiquement testées en jeu). **Confirmé fonctionnel en jeu par Arnaud le 2026-07-22.**
 
 **Réflexe pour la suite** : si une future session retombe sur des stats non traduites dans `untranslated-stats-fr.report.txt` qui semblent être du texte "normal" (pas de mode avancé en jeu, pas de raison évidente), vérifier d'abord l'hypothèse "fichier StatDescriptions manquant" avant de chercher une cause plus compliquée - c'est rapide à tester (probe avec quelques noms de fichiers plausibles) et ça s'est déjà avéré vrai une fois.
+
+---
+
+### 9.10 RÉSOLU (session 2026-07-22, suite) : Carquois, placeholder `{}` non géré par le parseur de StatDescriptions
+
+Symptôme rapporté par Arnaud sur un carquois rare : la ligne `50% d'Augmentation de Dégâts avec les Aptitudes d'arc` (implicite/explicite, capture dans `CapturePOE/carquois.txt` et `carquois.png`) non reconnue, alors que la traduction française elle-même est correcte (confirmé par Arnaud) — donc pas une question de mauvais mot, plutôt un problème de mécanique.
+
+**Diagnostic** : `#% increased Damage with Bow Skills` restait en anglais dans `fr/stats.ndjson`. Recherche du texte anglais dans `stat_descriptions.txt` : trouvé, bloc `damage_+%_with_bow_skills`, mais avec un format inhabituel :
+```
+description
+	1 damage_+%_with_bow_skills
+	2
+		1|# "{}% increased Damage with Bow Skills"
+		#|-1 "{}% reduced Damage with Bow Skills" negate 1
+	...
+	lang "French"
+	2
+		1|# "{}% d'Augmentation de Dégâts avec les Aptitudes d'arc"
+		#|-1 "{}% de Réduction de Dégâts avec les Aptitudes d'arc" negate 1
+```
+Le placeholder de valeur est écrit `{}` (accolades vides) au lieu de la forme habituelle `{0}`. Sémantiquement identique (un seul argument, index implicite), mais `parse-stat-descriptions.mjs` convertissait les placeholders en `#` avec la regex `/\{\d+(?::[^}]*)?\}/g` — le `\d+` exige au moins un chiffre, donc `{}` n'était jamais reconnu comme placeholder et restait tel quel dans le texte indexé (`"{}% increased Damage with Bow Skills"` au lieu de `"#% increased Damage with Bow Skills"`). `translateMatcherString` cherche `textIndex.get(trimmed)` avec le texte de `en/stats.ndjson` (qui utilise `#`, jamais `{}`) : la recherche échouait silencieusement, fallback sur l'anglais.
+
+**Correctif** : `\d+` → `\d*` dans la regex de `scripts/generate-fr-locale/parse-stat-descriptions.mjs`, pas besoin de toucher au reste de la logique, la substitution en `#` fonctionne identiquement une fois le placeholder reconnu. Un seul bloc confirmé avec ce format pour l'instant, mais le motif `{}` apparaît ~394 fois dans le fichier combiné `stat_descriptions.txt` — donc probablement plusieurs autres stats concernées par le même bug avant ce correctif. Confirmé par le saut de couverture globale : 86.8% → 87.6% (+82 matchers traduits) rien qu'en relançant la génération avec le fix, sans autre changement.
+
+**Confirmé fonctionnel en jeu par Arnaud le 2026-07-22.**
+
+**Réflexe pour la suite** : si une stat reste non traduite sans raison apparente (le texte anglais existe bien dans les fichiers), vérifier la forme exacte du placeholder dans le bloc source avant de chercher ailleurs — `{}` vu ici, mais d'autres variantes exotiques (`{0:+d}` déjà géré, éventuellement d'autres formats de specifier) pourraient exister.
 
 ---
 

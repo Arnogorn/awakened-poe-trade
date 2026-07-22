@@ -43,12 +43,19 @@ export function parseStatDescriptions (rawBuffer) {
           // convention this repo's existing en/stats.ndjson matchers already
           // use (the "+" seen in some `ref` values is added separately by
           // whatever built en/stats.ndjson, not present in the matcher text).
+          // A handful of blocks (e.g. `damage_+%_with_bow_skills`) write the
+          // single-argument placeholder as bare `{}` instead of `{0}` - same
+          // meaning, just missing the index digit, so `\d*` (not `\d+`) is
+          // needed or these blocks silently fail to index (confirmed via
+          // Arnaud's "#% increased Damage with Bow Skills" quiver, 2026-07-22:
+          // stayed in English because the index key kept the literal `{}`
+          // instead of `#`, never matching this repo's `#`-normalized ref).
           // The game file also encodes multi-line text with a literal 2-char
           // `\n` escape (backslash + n), not a real newline - en/stats.ndjson
           // (RePoE-derived) uses a real newline for the same text, so this
           // must be converted or every multi-line stat fails to match.
           const varText = varMatch[2]
-            .replace(/\{\d+(?::[^}]*)?\}/g, '#')
+            .replace(/\{\d*(?::[^}]*)?\}/g, '#')
             .replace(/\\n/g, '\n')
           const flags = varMatch[3].trim()
           if (!langs[currentLang]) langs[currentLang] = []
