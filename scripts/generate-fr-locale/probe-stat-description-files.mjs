@@ -34,6 +34,7 @@ const CANDIDATES = [
   'heist_area_stat_descriptions.txt',
   'heist_job_stat_descriptions.txt',
   'necropolis_stat_descriptions.txt',
+  'tincture_stat_descriptions.txt',
   'delve_stat_descriptions.txt',
   'harvest_stat_descriptions.txt',
   'sanctum_stat_descriptions.txt',

@@ -35,7 +35,8 @@ const STAT_DESCRIPTION_FILES = [
   'monster_stat_descriptions.txt',
   'sentinel_stat_descriptions.txt',
   'heist_equipment_stat_descriptions.txt',
-  'necropolis_stat_descriptions.txt'
+  'necropolis_stat_descriptions.txt',
+  'tincture_stat_descriptions.txt'
 ]
 
 async function main () {
