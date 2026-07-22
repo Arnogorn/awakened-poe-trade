@@ -187,24 +187,31 @@ function commonSuffixLen (a, b) {
 // possible values for that mod), so it can't be looked up the normal way.
 // Verified across every `advanced` field currently in en/stats.ndjson
 // (499 total): 480 are a single splice of `string` (the rest touch multiple
-// spots and are left alone below), and the annotation itself is always an
-// untranslated proper noun (an NPC/skill name) - confirmed identical in every
-// already-translated StatDescriptions language block (German, Spanish,
-// Portuguese, Russian) for the Timeless Jewel conqueror names. So instead of
-// translating the annotation, this finds the same anchor text in the already-
-// translated French `string` and re-splices the English annotation verbatim.
-// `knownAnchorFr`, when the caller already has the exact French phrase from a
-// table join (gem/passive name), is used as-is; otherwise the anchor is
-// guessed as the trailing word run right before the splice point in English,
-// which only works if that word is itself untranslated in French.
-function deriveAdvancedText (enString, enAdvanced, frString, knownAnchorFr) {
+// spots and are left alone below). This finds the same anchor text in the
+// already-translated French `string` and splices the annotation in at the
+// same spot. `knownAnchorFr`, when the caller already has the exact French
+// phrase from a table join (gem/passive name), is used as-is; otherwise the
+// anchor is guessed as the trailing word run right before the splice point
+// in English, which only works if that word is itself untranslated in
+// French (true for NPC names, e.g. Timeless Jewel conquerors).
+// Whether the annotation ITSELF needs translating varies by mod family: for
+// Timeless Jewel conquerors it's an untranslated proper noun (confirmed
+// identical across German/Spanish/Portuguese/Russian StatDescriptions
+// blocks), spliced verbatim by default. Gem-level mods are the opposite -
+// their annotation is a pair of *gem* names, which ARE translated in French
+// (confirmed via a real "+3 to Level of all Spark Gems" amulet, Arnaud,
+// 2026-07-22: real advanced text is "(Boule de feu-Déflagration divine)",
+// not the English "(Fireball-Divine Blast)" this function used to splice in
+// verbatim) - pass `transformAnnotation` to translate it before splicing.
+function deriveAdvancedText (enString, enAdvanced, frString, knownAnchorFr, transformAnnotation) {
   if (enAdvanced === undefined || enAdvanced === enString) return undefined
 
   const prefixLen = commonPrefixLen(enString, enAdvanced)
   const suffixLen = commonSuffixLen(enString, enAdvanced)
   if (prefixLen + suffixLen !== enString.length) return undefined // more than one splice point - don't guess
 
-  const annotation = enAdvanced.slice(prefixLen, enAdvanced.length - suffixLen)
+  let annotation = enAdvanced.slice(prefixLen, enAdvanced.length - suffixLen)
+  if (transformAnnotation) annotation = transformAnnotation(annotation)
   const anchorFr = knownAnchorFr || (enString.slice(0, prefixLen).match(/([A-Za-zÀ-ÿ'’-]+)\s*$/) || [])[1]
   if (!anchorFr) return undefined
 
@@ -213,6 +220,19 @@ function deriveAdvancedText (enString, enAdvanced, frString, knownAnchorFr) {
 
   const insertAt = firstIdx + anchorFr.length
   return frString.slice(0, insertAt) + annotation + frString.slice(insertAt)
+}
+
+// Translates the "(GemA-GemB)" gem-name-range annotation used by gem-level
+// mods' `advanced` text (see deriveAdvancedText above) via the same
+// `gemNames` table join used for the mod text itself. Falls back to the
+// English name if a gem isn't found (shouldn't happen in practice since
+// Fireball/Divine Blast - the two names seen so far - are both regular
+// BaseItemTypes entries), rather than dropping the whole annotation.
+function translateGemNameRangeAnnotation (annotation) {
+  const m = annotation.match(/^\(([^-]+)-([^)]+)\)$/)
+  if (!m) return annotation
+  const [, a, b] = m
+  return `(${gemNames.get(a) ?? a}-${gemNames.get(b) ?? b})`
 }
 
 // Returns { text, source } where `source` is:
@@ -269,7 +289,7 @@ function translateMatcherString (matcher, textIndex) {
     const fr = gemNames.get(gemLevelMatch[1])
     if (fr) {
       const text = `# au Niveau de toutes les Gemmes ${fr}${trailingSpace}`
-      const advanced = deriveAdvancedText(str, matcher.advanced, text, fr)
+      const advanced = deriveAdvancedText(str, matcher.advanced, text, fr, translateGemNameRangeAnnotation)
       return { text, source: 'game-data-gem', advanced }
     }
   }

@@ -235,7 +235,6 @@ function build () {
 const UNVERIFIED_KEYS = {
   MAP_BLIGHTED: 'No agreement needed (a Map is always feminine) but FR puts the word AFTER the noun ("{0} infestée") - regex reshaped to capture-group-then-suffix. Not cross-checked against a real Blighted Map item, please verify.',
   MAP_BLIGHT_RAVAGED: 'Same reshaping as MAP_BLIGHTED ("{0} ravagée par l\'Infestation"). Please verify against a real item.',
-  GEM_LEVEL: 'Hand-typed from ClientStrings "Level:" (TutorialPanelGlossarySubtitle47) rather than looked up by Id - double check against a real gem tooltip.',
   FLASK_CHARGES: 'No distinct literal found around the {0} Charges count for this specific popup - kept English, verify against a real flask tooltip.',
   METAMORPH_BRAIN: 'French item names likely reorder to "Cerveau de <monster>" instead of "<monster> Brain" - this needs a parser/regex-shape change, not just a word swap. Left English.',
   METAMORPH_EYE: 'Same reordering issue as METAMORPH_BRAIN.',
