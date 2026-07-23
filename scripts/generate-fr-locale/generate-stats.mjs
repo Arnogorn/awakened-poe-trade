@@ -251,6 +251,26 @@ function commonSuffixLen (a, b) {
 // 2026-07-22: real advanced text is "(Boule de feu-Déflagration divine)",
 // not the English "(Fireball-Divine Blast)" this function used to splice in
 // verbatim) - pass `transformAnnotation` to translate it before splicing.
+// GGG's own `stat_descriptions.txt` sometimes defines the exact same stat id
+// TWICE, with genuinely different French text between the two blocks - unlike
+// FILE_PRIORITY (different files, different context) or the `old_do_not_use`
+// prefix (clearly-marked legacy ids), there is no naming signal to resolve
+// these automatically: `textIndex` just returns the first-encountered block,
+// which is arbitrary. Confirmed via a real screenshot (Arnaud, 2026-07-23,
+// "The Living Blade" unique sword's "Cannot be Poisoned" implicit) that the
+// SECOND `cannot_be_poisoned` block (line ~131381) is correct, not the first
+// (line ~71519, "Immunité à l'Empoisonnement" - what this repo generated
+// before this fix). Cross-checked against poewiki.net/wiki/Poison, which
+// notes this exact wording/unique is the sole user of this stat. At least 15
+// other same-file duplicate-id cases exist (see PROJECT_CONTEXT.md) - do NOT
+// assume "last wins" is a safe general rule from this one example (a couple
+// of the others look like the FIRST block is the correct/current one instead)
+// - only add an entry here once a specific case is confirmed against a real
+// client capture, the same discipline as TIMELESS_JEWEL_HISTORIC_ADVANCED above.
+const CONFIRMED_TEXT_OVERRIDES = {
+  'Cannot be Poisoned': 'Vous ne pouvez pas être Empoisonné'
+}
+
 function deriveAdvancedText (enString, enAdvanced, frString, knownAnchorFr, transformAnnotation) {
   if (enAdvanced === undefined || enAdvanced === enString) return undefined
 
@@ -304,6 +324,12 @@ function translateMatcherString (matcher, textIndex) {
   const str = matcher.string
   const trimmed = str.trim()
   const trailingSpace = str.length !== trimmed.length ? str.slice(trimmed.length) : ''
+
+  if (CONFIRMED_TEXT_OVERRIDES[trimmed]) {
+    const text = CONFIRMED_TEXT_OVERRIDES[trimmed] + trailingSpace
+    const advanced = deriveAdvancedText(str, matcher.advanced, text)
+    return { text, source: 'game-data', advanced }
+  }
 
   const candidates = textIndex.get(trimmed)
   if (candidates && candidates.length) {
