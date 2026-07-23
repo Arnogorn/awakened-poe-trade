@@ -48,10 +48,58 @@ function * walkStats (entries) {
   }
 }
 
+// translateMatcherString() below picks the FIRST candidate block in
+// textIndex.get(text) whose variant count matches (see parse-stat-descriptions.mjs
+// buildEnglishTextIndex). Several of the 13 StatDescriptions files define a block
+// with the EXACT SAME English text as another file but a genuinely different
+// French translation - found by an exhaustive cross-file comparison (2026-07-23,
+// 77 conflicting English texts). Concretely: `damage_+%` ("{0}% increased
+// Damage") exists both in `stat_descriptions.txt` (FR "d'Augmentation de
+// Dégâts", generic item mod) and in `active_skill_gem_stat_descriptions.txt`
+// (FR "d'Augmentation des Dégâts" - an extra "s"), and since files were read in
+// `fs.readdirSync` (alphabetical) order, the skill-gem-tooltip file's block won
+// EVERY match of this text throughout stats.ndjson, including on plain item
+// mods (e.g. a rare Jewel's fractured/implicit "10% increased Damage" line -
+// confirmed broken in Arnaud's real client, 2026-07-23).
+//
+// Parser.ts only ever parses text copied from an ITEM's clipboard tooltip -
+// never a skill gem's own stat panel, a passive tree node's tooltip, or a
+// monster's ability tooltip. So among files sharing identical English text,
+// the ones describing actual copyable item mods must always win. Order below:
+// generic item mods first, then other item-type files (all genuinely
+// copyable), with the non-item/tooltip-only files pushed last as a fallback
+// (kept only for refs that exist nowhere else - never should out-rank a
+// legitimate item-mod source on a shared text).
+const FILE_PRIORITY = [
+  'stat_descriptions.txt',
+  'map_stat_descriptions.txt',
+  'atlas_stat_descriptions.txt',
+  'heist_equipment_stat_descriptions.txt',
+  'tincture_stat_descriptions.txt',
+  'sentinel_stat_descriptions.txt',
+  'necropolis_stat_descriptions.txt',
+  'expedition_relic_stat_descriptions.txt',
+  // Below: skill/gem/passive-tree/monster tooltip text, never copyable item
+  // text - lowest priority, present only as a last-resort fallback.
+  'active_skill_gem_stat_descriptions.txt',
+  'gem_stat_descriptions.txt',
+  'skill_stat_descriptions.txt',
+  'passive_skill_stat_descriptions.txt',
+  'monster_stat_descriptions.txt'
+]
+
 function loadAllBlocks () {
   const dir = path.join(__dirname, 'raw', 'stat-descriptions')
+  const files = fs.readdirSync(dir)
+
+  const missing = files.filter(f => !FILE_PRIORITY.includes(f))
+  if (missing.length) {
+    throw new Error(`loadAllBlocks: FILE_PRIORITY is missing file(s) present on disk: ${missing.join(', ')} - add them (see comment above) before regenerating.`)
+  }
+
   let blocks = []
-  for (const file of fs.readdirSync(dir)) {
+  for (const file of FILE_PRIORITY) {
+    if (!files.includes(file)) continue
     blocks = blocks.concat(loadStatDescriptions(path.join(dir, file)))
   }
   return blocks

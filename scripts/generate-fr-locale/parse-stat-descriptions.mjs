@@ -79,14 +79,40 @@ export function loadStatDescriptions (path) {
   return parseStatDescriptions(fs.readFileSync(path))
 }
 
+// GGG keeps old stat ids around (for existing items rolled before a mod was
+// reworked) under an "old_do_not_use_*" id, alongside a current replacement id
+// that often has the SAME English text but a different (corrected) French
+// translation - e.g. `old_do_not_use_mana_leech_from_physical_damage_%` (FR
+// "d'Attaque", singular) vs the current `mana_leech_from_physical_attack_damage_permyriad`
+// (FR "des Attaques", plural, confirmed correct against a real ring copied by
+// Arnaud, 2026-07-23). The consumer (translateMatcherString in
+// generate-stats.mjs) just takes the first same-text candidate it finds, so
+// whichever block happens to appear first in the file wins - and the
+// deprecated block came first here, silently breaking recognition of a very
+// common Leech mod. GGG's own naming makes the ambiguity resolvable without
+// guessing: a block whose EVERY stat id is prefixed "old_do_not_use" should
+// never outrank a same-text block that isn't.
+function isDeprecatedBlock (block) {
+  return block.statIds.length > 0 && block.statIds.every(id => id.startsWith('old_do_not_use'))
+}
+
 // Builds an index: normalized English variant text -> matching blocks.
+// Non-deprecated blocks are listed before deprecated ones for the same text
+// (stable within each group), so the first-matching-candidate logic in
+// generate-stats.mjs naturally prefers the current stat id over a legacy one.
 export function buildEnglishTextIndex (blocks) {
   const index = new Map()
+  const deprecated = new Map()
   for (const b of blocks) {
+    const target = isDeprecatedBlock(b) ? deprecated : index
     for (const v of (b.langs.English || [])) {
-      if (!index.has(v.text)) index.set(v.text, [])
-      index.get(v.text).push(b)
+      if (!target.has(v.text)) target.set(v.text, [])
+      target.get(v.text).push(b)
     }
+  }
+  for (const [text, blocksForText] of deprecated) {
+    if (!index.has(text)) index.set(text, [])
+    index.get(text).push(...blocksForText)
   }
   return index
 }
