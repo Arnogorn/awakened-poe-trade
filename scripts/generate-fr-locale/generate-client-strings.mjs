@@ -134,7 +134,9 @@ function build () {
     ITEM_SYNTHESISED: genderedSuffixRegex('SynthesisedItem'),
     VEILED_PREFIX: cs('ItemDisplayVeiledPrefix'),
     VEILED_SUFFIX: cs('ItemDisplayVeiledSuffix'),
-    FLASK_CHARGES: /^Currently has \d+ Charges$/, // see report: no distinct literal to translate around the number, needs live-game phrasing check
+    // ClientStrings "ItemDisplayChargesNCharges": EN "Currently has {0} Charges" ->
+    // FR "Contient actuellement {0} charges" (confirmed real row, same shape as en).
+    FLASK_CHARGES: new RegExp(`^${cs('ItemDisplayChargesNCharges').replace('{0}', '\\d+')}$`),
     METAMORPH_HELP: cs('MetamorphosisItemisedMapBoss'),
     BEAST_HELP: cs('ItemDescriptionItemisedCapturedMonster'),
     VOIDSTONE_HELP: cs('PrimordialWatchstoneDescriptionText'),
@@ -166,7 +168,9 @@ function build () {
     HEIST_JOB_AGILITY: hj('Agility'),
     HEIST_JOB_DECEPTION: hj('Deception'),
     HEIST_JOB_ENGINEERING: hj('Engineering'),
-    HEIST_CONTRACT_TARGET: /^Heist Target: .+ \((.+)\)$/, // see report
+    // ClientStrings "ItemDisplayHeistContractObjectiveWithValue": EN "Heist Target: {0} ({1})"
+    // -> FR "Objectif du Casse : {0} ({1})" (confirmed real row, same shape as en).
+    HEIST_CONTRACT_TARGET: new RegExp(`^${cs('ItemDisplayHeistContractObjectiveWithValue').split('{0}')[0]}.+ \\((.+)\\)$`),
     HEIST_TARGET_PRICELESS: 'Priceless', // see report: no matching ClientStrings row found
     MIRRORED: cs('ItemPopupMirrored'),
     SPLIT: cs('ItemPopupSplit'),
@@ -179,8 +183,13 @@ function build () {
     CRAFTED_PREFIX: cs('ModDescriptionLineCrafted').replace('{0}', cs('ModDescriptionLinePrefix').replace('« {0} »', '')),
     CRAFTED_SUFFIX: cs('ModDescriptionLineCrafted').replace('{0}', cs('ModDescriptionLineSuffix').replace('« {0} »', '')),
     IMPLICIT_MODIFIER: cs('ModDescriptionLineImplicit'),
-    FRACTURED_PREFIX: 'Fractured Prefix Modifier', // see report: no matching ClientStrings row found
-    FRACTURED_SUFFIX: 'Fractured Suffix Modifier', // see report
+    // Same combining pattern as CRAFTED_PREFIX/CRAFTED_SUFFIX above: "ModDescriptionLineFractured"
+    // (EN "Fractured {0}" -> FR "Fissuré {0}") wraps the already-confirmed Prefix/Suffix label.
+    // This is the "mode avancé" comparison used by advanced-mod-desc.ts to tag a mod as Fractured -
+    // it was previously left as the raw English literal, which meant no fractured item's mod line
+    // could ever match once advanced mod description is enabled in the client.
+    FRACTURED_PREFIX: cs('ModDescriptionLineFractured').replace('{0}', cs('ModDescriptionLinePrefix').replace('« {0} »', '')),
+    FRACTURED_SUFFIX: cs('ModDescriptionLineFractured').replace('{0}', cs('ModDescriptionLineSuffix').replace('« {0} »', '')),
     UNSCALABLE_VALUE: ' — ' + cs('DescriptionLabelFixedValueStat').match(/\{ — (.+)\}\}$/)[1],
     CORRUPTED_IMPLICIT: cs('ModDescriptionLineCorruptedImplicit'),
     // ClientStrings "AlternateQualityModIncreaseText": EN " — {0}% Increased" ->
@@ -235,7 +244,6 @@ function build () {
 const UNVERIFIED_KEYS = {
   MAP_BLIGHTED: 'No agreement needed (a Map is always feminine) but FR puts the word AFTER the noun ("{0} infestée") - regex reshaped to capture-group-then-suffix. Not cross-checked against a real Blighted Map item, please verify.',
   MAP_BLIGHT_RAVAGED: 'Same reshaping as MAP_BLIGHTED ("{0} ravagée par l\'Infestation"). Please verify against a real item.',
-  FLASK_CHARGES: 'No distinct literal found around the {0} Charges count for this specific popup - kept English, verify against a real flask tooltip.',
   METAMORPH_BRAIN: 'French item names likely reorder to "Cerveau de <monster>" instead of "<monster> Brain" - this needs a parser/regex-shape change, not just a word swap. Left English.',
   METAMORPH_EYE: 'Same reordering issue as METAMORPH_BRAIN.',
   METAMORPH_LUNG: 'Same reordering issue as METAMORPH_BRAIN.',
@@ -243,10 +251,7 @@ const UNVERIFIED_KEYS = {
   METAMORPH_LIVER: 'Same reordering issue as METAMORPH_BRAIN.',
   HEIST_BLUEPRINT_GEMS: 'No ClientStrings row found matching "Unusual Gems" - kept English.',
   HEIST_CONTRACT_JOB: 'Uses the generic "Requires" (ItemRequirementsLabel) - not verified that Heist contract job lines use the exact same phrasing in French. Verify against a real Heist Contract item.',
-  HEIST_CONTRACT_TARGET: 'No matching ClientStrings row found for this exact shape - kept English.',
   HEIST_TARGET_PRICELESS: 'No ClientStrings row found matching "Priceless" - kept English.',
-  FRACTURED_PREFIX: 'No ClientStrings row found for "Fractured Prefix Modifier" as one string - kept English (found "Fractured {0}" = "Fissuré {0}" and "Prefix Modifier" separately, but combining them is a guess, not confirmed).',
-  FRACTURED_SUFFIX: 'Same as FRACTURED_PREFIX.',
   MODIFIER_LINE: 'Tier/Rank words substituted from LadderColumnRank ("Rang") and a compound-derived "Palier" - "Rang" is confirmed for leaderboard rank, not specifically confirmed for mod rank context. Verify against a real Eldritch-influenced item.',
   MAP_TIER: 'Uses "Palier" derived from the compound "Palier de Carte" (Map Tier), not a standalone-confirmed word.',
   CHAT_WHISPER_TO: 'Chat command prefixes ("@To"/"@From") not verified against a real French client - PoE chat commands are sometimes kept in English regardless of client language. Left as-is.',
