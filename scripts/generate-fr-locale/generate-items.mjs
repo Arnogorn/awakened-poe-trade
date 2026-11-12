@@ -73,7 +73,10 @@ function main () {
     DIVINATION_CARD: buildIdKeyedTranslation('BaseItemTypes'),
     GEM: mergeTranslations(buildIdKeyedTranslation('BaseItemTypes'), buildIdKeyedTranslation('GemEffects')),
     CAPTURED_BEAST: buildIdKeyedTranslation('MonsterVarieties'),
-    UNIQUE: buildUniqueNameTranslation()
+    UNIQUE: buildUniqueNameTranslation(),
+    // AREA -> WorldAreas (same Id/Name join). Several rows can share one English
+    // name (act variants); buildIdKeyedTranslation keeps the last, all share the same FR name.
+    AREA: buildIdKeyedTranslation('WorldAreas')
   }
 
   const enItems = fs.readFileSync(path.join(REPO_DATA, 'en', 'items.ndjson'), 'utf-8')

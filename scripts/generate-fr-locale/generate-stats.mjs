@@ -79,6 +79,20 @@ const FILE_PRIORITY = [
   'sentinel_stat_descriptions.txt',
   'necropolis_stat_descriptions.txt',
   'expedition_relic_stat_descriptions.txt',
+  // Season 2026-09 item-related files (league mechanics), found in the bundle index:
+  'deepwater_stat_descriptions.txt',
+  'deepwater_explicit_stat_descriptions.txt',
+  'deepwater_implicit_stat_descriptions.txt',
+  'deepwater_applied_adjacent_stat_descriptions.txt',
+  'mercenary_support_stat_descriptions.txt',
+  'advanced_mod_stat_descriptions.txt',
+  'atlas_relic_stat_descriptions.txt',
+  'sanctum_relic_stat_descriptions.txt',
+  'graft_stat_descriptions.txt',
+  'leaguestone_stat_descriptions.txt',
+  'village_stat_descriptions.txt',
+  'mirage_stat_descriptions.txt',
+  'primordial_altar_stat_descriptions.txt',
   // Below: skill/gem/passive-tree/monster tooltip text, never copyable item
   // text - lowest priority, present only as a last-resort fallback.
   'active_skill_gem_stat_descriptions.txt',
@@ -182,6 +196,48 @@ const GEM_LEVEL_RE = /^# to Level of all (.+) Gems$/
 // index as-is: its numbers are normalized back to "#" to find the matching
 // template, then the original numbers are substituted into the French text
 // at the same positions.
+// "While a Unique Enemy / Pinnacle Atlas Boss is in your Presence, {stat}"
+// (~700 trade matchers, season 2026-09 mod family): the wrapper sentence is a
+// real ClientStrings row in both languages, and {stat} is an ordinary stat
+// line already translated through the normal StatDescriptions path.
+const clientStringsEn = new Map(JSON.parse(fs.readFileSync(path.join(__dirname, 'tables', 'English', 'ClientStrings.json'), 'utf-8')).map(r => [r.Id, r.Text]))
+const clientStringsFr = new Map(JSON.parse(fs.readFileSync(path.join(__dirname, 'tables', 'French', 'ClientStrings.json'), 'utf-8')).map(r => [r.Id, r.Text]))
+const PRESENCE_WRAPPERS = ['InfluenceStatConditionPresenceUniqueMonster', 'InfluenceStatConditionPresenceCelestialBoss']
+  .map(id => ({ en: clientStringsEn.get(id), fr: clientStringsFr.get(id) }))
+  .filter(w => w.en && w.fr && w.en.endsWith('{0}') && w.fr.includes('{0}'))
+  .map(w => ({ enPrefix: w.en.slice(0, -3), frTemplate: w.fr }))
+
+// "Supported by level N <Support gem>" families (season 2026-09, ~800 matchers).
+// The support gem name is a client-resolved placeholder ({1}, StatDescriptions
+// `display_indexable_*support`), so it is joined from BaseItemTypes: EN
+// "<Name> Support" -> FR "Soutien : <Nom>"; the displayed name drops both
+// affixes (matches the hard-coded names in the game's own blocks, e.g.
+// "modifiées par Augmentation de Zone d'effet (Niveau {0})").
+const supportGemNames = new Map()
+for (const [enName, frName] of gemNames) {
+  if (enName.endsWith(' Support') && frName.startsWith('Soutien : ')) {
+    supportGemNames.set(enName.slice(0, -' Support'.length), frName.slice('Soutien : '.length))
+  }
+}
+// French templates copied from the game's own blocks (stat_descriptions.txt):
+//  - `display_indexable_non_active_support` (Helmet/Gloves/Boots/Passive Tree)
+//  - `local_random_support_gem_index`: "Les Gemmes Enchâssées sont modifiées par {1} (Niveau {0})"
+//  - ClientStrings "ItemDisplayBuiltInSupport": "Modifié par {0} (Niveau 1)"
+const SUPPORT_FAMILIES = [
+  { re: /^Skills Socketed in your Helmet are Supported by level # (.+)$/, fr: n => `Les Aptitudes Enchâssées dans votre Casque sont Modifiées par ${n} (Niveau #)` },
+  { re: /^Skills Socketed in your Gloves are Supported by level # (.+)$/, fr: n => `Les Aptitudes Enchâssées dans vos Gants sont Modifiées par ${n} (Niveau #)` },
+  { re: /^Skills Socketed in your Boots are Supported by level # (.+)$/, fr: n => `Les Aptitudes Enchâssées dans vos Bottes sont Modifiées par ${n} (Niveau #)` },
+  { re: /^Skills granted by your Passive Tree are Supported by level # (.+)$/, fr: n => `Les Aptitudes octroyées par votre Arbre des Talents sont Modifiées par ${n} (Niveau #)` },
+  { re: /^Socketed Gems are Supported by Level # (.+)$/, fr: n => `Les Gemmes Enchâssées sont modifiées par ${n} (Niveau #)` },
+  { re: /^Supported by Level 1 (.+)$/, fr: n => (clientStringsFr.get('ItemDisplayBuiltInSupport') || '').replace('{0}', n) }
+]
+
+function translateSupportRangeAnnotation (annotation) {
+  const m = annotation.match(/^\(([^-]+)-([^)]+)\)$/)
+  if (!m) return annotation
+  return `(${supportGemNames.get(m[1]) ?? m[1]}-${supportGemNames.get(m[2]) ?? m[2]})`
+}
+
 const SMALL_PASSIVE_GRANT_EN = 'Added Small Passive Skills grant: '
 const SMALL_PASSIVE_GRANT_FR = 'Les Passifs mineurs ajoutés octroient: '
 
@@ -373,6 +429,36 @@ function translateMatcherString (matcher, textIndex) {
     return { text: smallPassiveGrantFr + trailingSpace, source: 'game-data-small-passive-grant' }
   }
 
+  for (const { enPrefix, frTemplate } of PRESENCE_WRAPPERS) {
+    if (trimmed.startsWith(enPrefix)) {
+      const inner = translateMatcherString({ string: trimmed.slice(enPrefix.length) }, textIndex)
+      if (inner) {
+        return { text: frTemplate.replace('{0}', inner.text) + trailingSpace, source: 'game-data-presence' }
+      }
+      break
+    }
+  }
+
+  for (const { re, fr: buildFr } of SUPPORT_FAMILIES) {
+    const m = trimmed.match(re)
+    if (!m) continue
+    const frName = supportGemNames.get(m[1].replace(/ \(Random Support Gem\)$/, ''))
+    const template = buildFr(frName ?? '')
+    if (!frName || !template) break
+    const text = template + trailingSpace
+    const advanced = deriveAdvancedText(str, matcher.advanced, text, frName, translateSupportRangeAnnotation)
+    return { text, source: 'game-data-support', advanced }
+  }
+
+  // Mercenary build entries whose matcher is just a skill/support gem name
+  // (e.g. "Wrath", "Mark On Hit"): joined from BaseItemTypes. UNVERIFIED for
+  // support gems: the displayed name on a French mercenary item may keep the
+  // "Soutien : " prefix; check against a real item.
+  if (!matcher.advanced && (gemNames.has(trimmed) || supportGemNames.has(trimmed)) && !trimmed.includes(' Support')) {
+    const frName = supportGemNames.get(trimmed) ?? gemNames.get(trimmed)
+    return { text: frName + trailingSpace, source: 'game-data-gemname' }
+  }
+
   if (PSEUDO_LABELS[trimmed]) {
     return { text: PSEUDO_LABELS[trimmed] + trailingSpace, source: 'pseudo-label' }
   }
@@ -452,7 +538,7 @@ function main () {
     .split('\n').filter(Boolean).map(line => JSON.parse(line))
 
   let totalMatchers = 0
-  const countBySource = { 'game-data': 0, 'game-data-passive': 0, 'game-data-gem': 0, 'game-data-small-passive-grant': 0, 'pseudo-label': 0 }
+  const countBySource = { 'game-data': 0, 'game-data-passive': 0, 'game-data-gem': 0, 'game-data-small-passive-grant': 0, 'game-data-presence': 0, 'game-data-support': 0, 'game-data-gemname': 0, 'pseudo-label': 0 }
   const untranslated = []
   const pseudoLabelUsed = []
   let advancedDerived = 0
@@ -501,19 +587,21 @@ function main () {
   const fromPassive = countBySource['game-data-passive']
   const fromGem = countBySource['game-data-gem']
   const fromSmallPassiveGrant = countBySource['game-data-small-passive-grant']
+  const fromPresence = countBySource['game-data-presence'] + countBySource['game-data-support'] + countBySource['game-data-gemname']
   const fromPseudoLabel = countBySource['pseudo-label']
-  const translatedMatchers = fromGameData + fromPassive + fromGem + fromSmallPassiveGrant + fromPseudoLabel
+  const translatedMatchers = fromGameData + fromPassive + fromGem + fromSmallPassiveGrant + fromPresence + fromPseudoLabel
   const pct = (100 * translatedMatchers / totalMatchers).toFixed(1)
-  const pctGameData = (100 * (fromGameData + fromPassive + fromGem + fromSmallPassiveGrant) / totalMatchers).toFixed(1)
+  const pctGameData = (100 * (fromGameData + fromPassive + fromGem + fromSmallPassiveGrant + fromPresence) / totalMatchers).toFixed(1)
   const reportLines = [
     'stats.ndjson (fr) coverage report',
     `generated: ${new Date().toISOString()}`,
     `translated matchers: ${translatedMatchers} / ${totalMatchers} (${pct}%)`,
-    `  - from real game data (Metadata/StatDescriptions/*.txt, French client text): ${fromGameData + fromPassive + fromGem + fromSmallPassiveGrant} (${pctGameData}%)`,
+    `  - from real game data (Metadata/StatDescriptions/*.txt, French client text): ${fromGameData + fromPassive + fromGem + fromSmallPassiveGrant + fromPresence} (${pctGameData}%)`,
     `      - direct StatDescriptions text match: ${fromGameData}`,
     `      - "Allocates {passive}" via PassiveSkills table join: ${fromPassive}`,
     `      - "+# to Level of all {gem} Gems" via BaseItemTypes table join: ${fromGem}`,
     `      - "Added Small Passive Skills grant: {sub-stat}" via ClientStrings label + StatDescriptions template join: ${fromSmallPassiveGrant}`,
+    `      - "While a Unique Enemy / Pinnacle Atlas Boss is in your Presence, {stat}" via ClientStrings wrapper + StatDescriptions join: ${fromPresence}`,
     `  - hand-translated "pseudo" trade-filter labels, NOT sourced from the game (see below, review these): ${fromPseudoLabel}`,
     `  - "advanced" (Advanced Mod Description mode) field re-derived alongside "string": ${advancedDerived}`,
     `      - of which hand-transcribed from real screenshots (Timeless Jewel historic mods, see TIMELESS_JEWEL_HISTORIC_ADVANCED): ${advancedOverridden}`,

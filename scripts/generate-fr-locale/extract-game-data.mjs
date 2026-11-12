@@ -36,7 +36,21 @@ const STAT_DESCRIPTION_FILES = [
   'sentinel_stat_descriptions.txt',
   'heist_equipment_stat_descriptions.txt',
   'necropolis_stat_descriptions.txt',
-  'tincture_stat_descriptions.txt'
+  'tincture_stat_descriptions.txt',
+  // Season 2026-09: found by enumerating Metadata/StatDescriptions in the bundle index
+  'deepwater_stat_descriptions.txt',
+  'deepwater_explicit_stat_descriptions.txt',
+  'deepwater_implicit_stat_descriptions.txt',
+  'deepwater_applied_adjacent_stat_descriptions.txt',
+  'mercenary_support_stat_descriptions.txt',
+  'advanced_mod_stat_descriptions.txt',
+  'atlas_relic_stat_descriptions.txt',
+  'sanctum_relic_stat_descriptions.txt',
+  'graft_stat_descriptions.txt',
+  'leaguestone_stat_descriptions.txt',
+  'village_stat_descriptions.txt',
+  'mirage_stat_descriptions.txt',
+  'primordial_altar_stat_descriptions.txt'
 ]
 
 async function main () {
@@ -75,7 +89,9 @@ async function main () {
       // NOT in BaseItemTypes under their composite display name - GemEffects
       // holds the full localized name directly (SkillGems.GemVariants ->
       // GemEffects).
-      { name: 'GemEffects', columns: ['Id', 'Name'] }
+      { name: 'GemEffects', columns: ['Id', 'Name'] },
+      // Area names, for items.ndjson AREA entries (maps' areas, e.g. "Abyssal Plain").
+      { name: 'WorldAreas', columns: ['Id', 'Name'] }
     ]
   }, path.join(__dirname, 'tables'), loader)
 
