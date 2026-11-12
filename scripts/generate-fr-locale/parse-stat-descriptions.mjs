@@ -57,6 +57,11 @@ export function parseStatDescriptions (rawBuffer) {
           const varText = varMatch[2]
             .replace(/\{\d*(?::[^}]*)?\}/g, '#')
             .replace(/\\n/g, '\n')
+            // Season 2026-09 patch: glossary markup `[Key|Displayed text]` (or
+            // bare `[Text]`) now appears in the game files. The trade site and
+            // copied item text only contain the displayed text, so keep only that.
+            .replace(/\[([^\]|]*)\|([^\]]*)\]/g, '$2')
+            .replace(/\[([^\]|]*)\]/g, '$1')
           const flags = varMatch[3].trim()
           if (!langs[currentLang]) langs[currentLang] = []
           langs[currentLang].push({ text: varText, flags })

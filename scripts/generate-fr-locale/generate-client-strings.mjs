@@ -222,6 +222,17 @@ function build () {
     INCURSION_MODS: ["Guatelitzi's", "Xopec's", "Topotante's", "Tacati's", "Matatl's", 'of Matatl', "Citaqualotl's", 'of Citaqualotl', 'of Tacati', 'of Guatelitzi', 'of Puhuarte'],
     ESSENCE_MODS: ['of the Essence', 'Essences'],
     INFAMOUS_MODS: ['of Infamy', 'Infamous'],
+    // Season 2026-09 keys (added upstream). Texts below come from ClientStrings rows
+    // confirmed in the fresh extraction; colon convention = glued colon like every other `cs(id) + ': '`.
+    ITEM_EATER: cs('ItemPopupEaterofWorldsItem'),
+    ITEM_EXARCH: cs('ItemPopupSearingExarchItem'),
+    // ClientStrings "DivergentItem": EN "Vestigial {0}" -> FR "{0} (Vestigial)" (suffix, not prefix).
+    VESTIGIAL_NAME: new RegExp('^' + cs('DivergentItem').split('{0}').map(part => part.replace(/[()]/g, '\\$&')).join('(.*)') + '$'),
+    VESTIGIAL_IMPLICIT: cs('ModDescriptionLineDivergentImplicit'),
+    MAP_AREA: cs('MapKeyWorldArea') + ': ',
+    CHART_SULPHUR: cs('ItemDisplayChartGhostflameIncrease') + ': ',
+    MERCENARY_LEVEL: 'Mercenary Level: ',
+    MERCENARY_BUILD: 'Build: ',
     FOIL_UNIQUE: cs('ItemPopupFoilUnique'),
     UNMODIFIABLE: cs('ItemPopupUnmodifiable'),
     // Same agreement pattern, from ClientStrings "MutatedUniqueName".
@@ -268,7 +279,12 @@ const UNVERIFIED_KEYS = {
   VEILED_MODS: 'Same as SHAPER_MODS.',
   INCURSION_MODS: 'Same as SHAPER_MODS.',
   ESSENCE_MODS: 'Same as SHAPER_MODS.',
-  INFAMOUS_MODS: 'Same as SHAPER_MODS.'
+  INFAMOUS_MODS: 'Same as SHAPER_MODS.',
+  MAP_AREA: 'Uses ClientStrings "MapKeyWorldArea" + glued colon (project convention). Not checked against a real French Map item copy.',
+  CHART_SULPHUR: 'Uses ClientStrings "ItemDisplayChartGhostflameIncrease" + glued colon (project convention). Not checked against a real item copy.',
+  VESTIGIAL_NAME: 'Regex built from ClientStrings "DivergentItem" ("{0} (Vestigial)"). Not checked against a real Vestigial unique copy.',
+  MERCENARY_LEVEL: 'No ClientStrings row matches the item property line ("MercenaryLevel" is the UI "Niv. {0}"). Kept English until verified on a real Mercenary item copy.',
+  MERCENARY_BUILD: 'Same as MERCENARY_LEVEL. Kept English.'
 }
 
 function main () {
