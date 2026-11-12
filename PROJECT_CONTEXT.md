@@ -115,7 +115,8 @@ Quand on ajoute une langue au type `Config['language']` (`renderer/src/web/Confi
   - Le merge a introduit 2 nouvelles clés dans `TranslationDict`/`en/client_strings.js` : `ESSENCE_MODS`, `INFAMOUS_MODS` (fragments de noms de mods générés, même famille que `SHAPER_MODS`/`ELDER_MODS`/etc., absents de `ClientStrings`, viennent du système de `Mods.dat` jamais extrait). Ajoutées dans `generate-client-strings.mjs` avec la même convention établie (gardées en anglais, commentaire explicatif, entrée dans `UNVERIFIED_KEYS`) — sinon `generate-client-strings.mjs` lève une erreur explicite (`missingKeys`) et le build TypeScript casse (`vue-tsc` réclamait les 2 clés manquantes dans `fr/client_strings.js`).
   - Pipeline fr relancé en entier (`extract` + `generate:items` + `generate:stats` + `generate-client-strings.mjs`) sur l'installation Steam d'Arnaud, à jour du patch de la nouvelle saison (vérifié : dossier `Bundles2` modifié le jour même à 14h36). Résultat : `items.ndjson` 99.5% (4716/4738), `stats.ndjson` 86.5% (9011/10414 — la légère baisse en % vs 87.6% avant le merge est normale, il y a ~115 nouveaux matchers liés à la saison pas encore tous résolus), `client_strings.js` 105/130. `.index.bin` régénérés. Builds `main`+`renderer` et lint renderer passés sans erreur. Committé (`292de3e`), **PAS ENCORE poussé sur `origin/master`** (en attente de validation en jeu, voir point suivant).
   - **Testé en jeu par Arnaud (app de base, sans notre fork) : les nouveaux objets de la saison ne sont PAS reconnus non plus.** Confirme que ce n'est pas un problème lié à notre travail fr — le catalogue GGG/l'extraction upstream pour cette toute nouvelle saison est probablement encore instable/incomplet le jour même du lancement (scénario classique en tout début de ligue, catalogue de recherche + extractions communautaires mettent souvent 24-48h à se stabiliser). **Rien à corriger de notre côté pour l'instant.**
-  - **Prochaine tâche prioritaire à la reprise** : refaire `git fetch upstream`, vérifier s'il y a un nouveau commit "update game data" plus récent que `d876a14`, remerger, relancer notre pipeline fr, puis retester en jeu (base ET notre fork) avant de pousser `292de3e` (ou un nouveau commit) sur `origin/master`.
+  - ~~Prochaine tâche prioritaire à la reprise : refaire `git fetch upstream`, remerger, relancer le pipeline fr, retester avant de pousser.~~ **Fait le 2026-11-12** (saison de septembre), voir section 9.11. Tout est poussé sur `origin/master` (`7b8e849`).
+- **Prochaine tâche prioritaire** : nouvelle saison PoE sortant le 2026-11-13. Procédure en fin de section 9.11.
 - **Autres tâches en attente (moins prioritaires que la mise à jour de saison ci-dessus)** :
   1. Décider de la proposition de PR au mainteneur original (étape 5), ou continuer à affiner la couverture (stats Heist/Atlas restantes, section 9.3).
   2. Termes de lore de l'étape 1 (app_i18n.json, liste en section 4) toujours pas vérifiés avec le client PoE FR réel — non bloquant, à faire à l'occasion.
@@ -180,7 +181,7 @@ npm run generate:all # extract + les 3 generate-*.mjs
 - **Table `BaseItemTypes`** (Id/Name, en+fr) : noms des objets normaux, gemmes, cartes de divination (`ITEM`/`GEM`/`DIVINATION_CARD`).
 - **Table `Words`** (Wordlist=6, Text/Text2) : noms des objets uniques. Piège découvert : `Text` reste TOUJOURS en anglais (référence interne), c'est `Text2` qui est réellement localisé. Vérifié en comparant les deux tables (0 différence sur `Text`, ~83% de différence sur `Text2`).
 - **Table `MonsterVarieties`** (Id/Name) : noms des bêtes capturables (namespace `CAPTURED_BEAST`).
-- **Table `ClientStrings`** (Id/Text) : tous les libellés fixes de l'UI/parser (raretés, "Corrupted", "Item Level: ", etc.) — **confirmé que l'API publique du site de trade (`/api/trade/data/stats`) ne fournit AUCUNE traduction**, donc cette table du jeu est la seule vraie source.
+- **Table `ClientStrings`** (Id/Text) : tous les libellés fixes de l'UI/parser (raretés, "Corrupted", "Item Level: ", etc.) — cette table du jeu reste la source des libellés du parser. **Correction 2026-11-12** : l'affirmation de juillet selon laquelle l'API du site de trade ne fournit aucune traduction était fausse (le test visait sans doute `www.pathofexile.com`). `fr.pathofexile.com/api/trade/data/{items,stats}` renvoie bien le texte français, voir section 9.11.
 - **Table `HeistJobs`** (Id/Name) : noms des compétences de casse (Lockpicking, Brute Force, etc.) — pas dans `ClientStrings`.
 - **`Metadata/StatDescriptions/*.txt`** (12 fichiers trouvés par sondage, cf. `probe-stat-description-files.mjs`) : texte des mods d'objets, format `description` / `lang "French"` avec variantes par valeur.
 
@@ -364,6 +365,28 @@ Le placeholder de valeur est écrit `{}` (accolades vides) au lieu de la forme h
 **Confirmé fonctionnel en jeu par Arnaud le 2026-07-22.**
 
 **Réflexe pour la suite** : si une stat reste non traduite sans raison apparente (le texte anglais existe bien dans les fichiers), vérifier la forme exacte du placeholder dans le bloc source avant de chercher ailleurs — `{}` vu ici, mais d'autres variantes exotiques (`{0:+d}` déjà géré, éventuellement d'autres formats de specifier) pourraient exister.
+
+### 9.11 Session du 2026-11-12 : saison de septembre, couverture complétée, API du site de trade
+
+Poussé sur `origin/master` (`7b8e849`). Commits de la session : `92ccc2d` (merge), `aa09d62` (couverture), `1077ac3` (API), `2838f34` (bug pseudo), `7b8e849` (zones Deepwater).
+
+**Merge upstream (saison du 2026-09-09)** : 2 conflits résolus en gardant `fr` (`make-index-files.mjs`, désormais appelé par un plugin Vite au build, plus de script npm `make-index-files` ; `hotkeyable-actions.ts`, `POEDB_LANGS` typé `Record<Config['language'], string>`). 8 nouvelles clés `TranslationDict` : 6 dérivées de `ClientStrings` (`ITEM_EATER`, `ITEM_EXARCH`, `VESTIGIAL_NAME` (FR suffixe `{0} (Vestigial)`), `VESTIGIAL_IMPLICIT`, `MAP_AREA`, `CHART_SULPHUR`), `MERCENARY_LEVEL`/`MERCENARY_BUILD` gardées en anglais (non vérifiées, aucune ligne `ClientStrings` correspondante). `CHART_SULPHUR` ("Soufre des trépassés: ", deux-points collé) **confirmé par une vraie Carte maritime copiée par Arnaud**.
+
+**Pipeline, changements importants** :
+- `parse-stat-descriptions.mjs` retire le nouveau balisage glossaire `[Clé|Texte]` / `[Texte]` apparu dans ce patch (250 occurrences).
+- **13 fichiers `StatDescriptions` ajoutés** (`deepwater_*`, `sanctum_relic`, `mercenary_support`, `advanced_mod`, `atlas_relic`, `graft`, `leaguestone`, `village`, `mirage`, `primordial_altar`), trouvés en **listant le dossier dans l'index des bundles** (`readIndexBundle` puis décompression de `pathRepsBundle` avant `getDirContent`, script de scratchpad non versionné). Méthode bien plus fiable que `probe-stat-description-files.mjs` qui ne teste que des noms devinés.
+- `generate-stats.mjs` : familles composées "Tant qu'un Ennemi unique / Boss final de l'Atlas est dans votre Présence, {stat}" (préfixe `ClientStrings` `InfluenceStatConditionPresence*`, 700 matchers) ; "Supported by level N <gemme de soutien>" (Casque/Gants/Bottes/Arbre/Gemmes enchâssées, modèles copiés des blocs du jeu, nom via `BaseItemTypes` sans "Soutien : ") ; noms de gemmes seuls (builds de mercenaire). **Non vérifié en jeu** : position de l'annotation du mode avancé pour les gemmes de soutien, et préfixe "Soutien : " éventuel sur les noms de soutien des objets de mercenaire.
+- `generate-items.mjs` : zones `AREA` via `WorldAreas` + `DeepwaterRooms` (zones des Cartes maritimes, ex. "Plaine abyssale" ; sans elles le parseur levait "Unknown Area name" et rejetait toute Carte maritime, confirmé corrigé en jeu).
+- **Nouveau `apply-trade-api.mjs`**, lancé après la génération (inclus dans `npm run generate:all`, ou `npm run apply:trade-api`) : comble ce qui reste en anglais avec l'API fr du site de trade et écrit `trade-api-fr.report.txt` (écarts jeu/site, texte du jeu gardé). Fichiers d'entrée **enregistrés à la main** dans `scripts/generate-fr-locale/api/` (gitignoré) : `apien_items.json`, `apifr_items.json`, `apien_stats.json`, `apifr_stats.json` (Cloudflare bloque curl, le navigateur intégré ne sait pas télécharger).
+
+**Pièges de l'API à connaître** :
+- Les listes `items` en/fr ont la même taille mais sont **décalées** (vu dans le groupe armour) : ne jamais apparier par position. Les uniques sont joints via le type de base (traduction `BaseItemTypes`), vérifié contre les uniques déjà traduits par le jeu (0 écart).
+- Une stat peut avoir un id réel ET un id `pseudo.` : le libellé pseudo est du texte de filtre du site, pas le texte de l'objet. Bug trouvé en jeu par Arnaud ("d'Augmentation au Taux de Régénération de Mana", "Ajoute de # à # … aux attaques") puis corrigé : ids réels prioritaires, libellé du site seulement pour les stats purement pseudo.
+- L'API n'a qu'un texte par id (pas les variantes "Réduction"), et pas de texte du mode avancé : elle complète, elle ne remplace pas les fichiers du jeu.
+
+**Couverture** : stats 471/11539 matchers encore en anglais (~95.9%), items 98.3% (restent 64 noms de builds de mercenaire, aucune table trouvée). 41 écarts jeu/site listés dans le rapport, à trancher avec de vraies copies d'objets.
+
+**À faire à la sortie de la saison suivante** : mettre à jour PoE (Steam), réenregistrer les 4 JSON de l'API, `git fetch upstream` + merge dès le "update data" de SnosMe, `npm run generate:all`, puis relister `Metadata/StatDescriptions` dans l'index pour repérer de nouveaux fichiers.
 
 ---
 
