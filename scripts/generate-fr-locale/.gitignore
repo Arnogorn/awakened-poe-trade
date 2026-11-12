@@ -3,3 +3,4 @@ config.local.json
 raw/
 tables/
 *.report.txt
+api/

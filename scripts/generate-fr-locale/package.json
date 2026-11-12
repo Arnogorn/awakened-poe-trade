@@ -7,7 +7,8 @@
     "extract": "node extract-game-data.mjs",
     "generate:items": "node generate-items.mjs",
     "generate:stats": "node generate-stats.mjs",
-    "generate:all": "npm run extract && npm run generate:items && npm run generate:stats"
+    "generate:all": "npm run extract && npm run generate:items && npm run generate:stats && node generate-client-strings.mjs && npm run apply:trade-api",
+    "apply:trade-api": "node apply-trade-api.mjs"
   },
   "dependencies": {
     "pathofexile-dat": "^15.2.0"
