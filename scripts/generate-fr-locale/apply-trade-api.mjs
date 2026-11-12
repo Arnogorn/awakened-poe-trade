@@ -105,11 +105,16 @@ function applyStats () {
   const differs = []
 
   function apiFor (stat) {
-    // trade ids like "explicit.stat_123|3|125" are option variants of "explicit.stat_123"
-    for (const ids of Object.values(stat.trade?.ids || {})) {
-      for (const id of ids) {
-        const base = id.split('|')[0]
-        if (frText.has(base) && enText.has(base)) return { id: base, en: enText.get(base), fr: frText.get(base) }
+    // trade ids like "explicit.stat_123|3|125" are option variants of "explicit.stat_123".
+    // Real item stats (explicit/implicit/...) win over pseudo ids: a stat that
+    // also has a pseudo id (e.g. "#% increased Mana Regeneration Rate") must
+    // never take the pseudo filter label, which is site wording, not item text
+    // (regression seen in game: "d'Augmentation au Taux" instead of "du Taux").
+    const all = Object.values(stat.trade?.ids || {}).flat().map(id => id.split('|')[0])
+    const ordered = [...all.filter(id => !id.startsWith('pseudo.')), ...all.filter(id => id.startsWith('pseudo.'))]
+    for (const base of ordered) {
+      if (frText.has(base) && enText.has(base)) {
+        return { id: base, en: enText.get(base), fr: frText.get(base), pseudoOnly: all.every(id => id.startsWith('pseudo.')) }
       }
     }
     return null
@@ -130,8 +135,8 @@ function applyStats () {
         if (stillEnglish) left++
         return m
       }
-      if (api.id.startsWith('pseudo.')) {
-        // Pseudo stats are trade site labels, not game text: the site IS the source.
+      if (api.pseudoOnly) {
+        // Pure pseudo stats are trade site labels, not game text: the site IS the source.
         if (m.string !== api.fr + trailing) { pseudoReplaced++; return { ...m, string: api.fr + trailing } }
         return m
       }
