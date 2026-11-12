@@ -76,7 +76,7 @@ function main () {
     UNIQUE: buildUniqueNameTranslation(),
     // AREA -> WorldAreas (same Id/Name join). Several rows can share one English
     // name (act variants); buildIdKeyedTranslation keeps the last, all share the same FR name.
-    AREA: buildIdKeyedTranslation('WorldAreas')
+    AREA: mergeTranslations(buildIdKeyedTranslation('WorldAreas'), buildIdKeyedTranslation('DeepwaterRooms'))
   }
 
   const enItems = fs.readFileSync(path.join(REPO_DATA, 'en', 'items.ndjson'), 'utf-8')

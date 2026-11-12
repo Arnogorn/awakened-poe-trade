@@ -91,7 +91,9 @@ async function main () {
       // GemEffects).
       { name: 'GemEffects', columns: ['Id', 'Name'] },
       // Area names, for items.ndjson AREA entries (maps' areas, e.g. "Abyssal Plain").
-      { name: 'WorldAreas', columns: ['Id', 'Name'] }
+      { name: 'WorldAreas', columns: ['Id', 'Name'] },
+      // Deepwater (season 2026-09) chart areas, e.g. "Abyssal Plain": not WorldAreas rows.
+      { name: 'DeepwaterRooms', columns: ['Id', 'Name'] }
     ]
   }, path.join(__dirname, 'tables'), loader)
 

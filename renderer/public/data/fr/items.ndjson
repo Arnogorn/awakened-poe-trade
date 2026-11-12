@@ -1,8 +1,8 @@
-{"name":"Abyssal Plain","refName":"Abyssal Plain","namespace":"AREA","tradeDisc":"AbyssalPlain","icon":"","area":{}}
+{"name":"Plaine abyssale","refName":"Abyssal Plain","namespace":"AREA","tradeDisc":"AbyssalPlain","icon":"","area":{}}
 {"name":"Académie","refName":"Academy","namespace":"AREA","tradeDisc":"54575","icon":"","area":{}}
 {"name":"Cavernes acides","refName":"Acid Caverns","namespace":"AREA","tradeDisc":"21257","icon":"","area":{"screenshot":"https://i.imgur.com/vISJftF.jpg"}}
 {"name":"Ruelles","refName":"Alleyways","namespace":"AREA","tradeDisc":"42968","icon":"","area":{"screenshot":"https://i.imgur.com/m21vNCp.jpg"}}
-{"name":"Anchorfield","refName":"Anchorfield","namespace":"AREA","tradeDisc":"Anchorfield","icon":"","area":{"special":true}}
+{"name":"Champ d'ancres","refName":"Anchorfield","namespace":"AREA","tradeDisc":"Anchorfield","icon":"","area":{"special":true}}
 {"name":"Cité antique","refName":"Ancient City","namespace":"AREA","tradeDisc":"2545","icon":"","area":{"screenshot":"https://i.imgur.com/MThKML2.jpg"}}
 {"name":"Nid d'arachnides","refName":"Arachnid Nest","namespace":"AREA","tradeDisc":"36866","icon":"","area":{"screenshot":"https://i.imgur.com/Ljh7mDh.jpg"}}
 {"name":"Tombeau arachnide","refName":"Arachnid Tomb","namespace":"AREA","tradeDisc":"7465","icon":"","area":{"screenshot":"https://i.imgur.com/1IAVUXr.jpg"}}
@@ -21,7 +21,7 @@
 {"name":"Tourbière","refName":"Bog","namespace":"AREA","tradeDisc":"47614","icon":"","area":{"screenshot":"https://i.imgur.com/cPWmdWr.jpg"}}
 {"name":"Crypte à ossements","refName":"Bone Crypt","namespace":"AREA","tradeDisc":"23253","icon":"","area":{"screenshot":"https://i.imgur.com/NVVVCOt.jpg"}}
 {"name":"Vallée roncière","refName":"Bramble Valley","namespace":"AREA","tradeDisc":"44170","icon":"","area":{"screenshot":"https://i.imgur.com/1HM5ro5.jpg"}}
-{"name":"Brine King's Domain","refName":"Brine King's Domain","namespace":"AREA","tradeDisc":"BrineKingsDomain","icon":"","area":{"special":true}}
+{"name":"Domaine du Roi des Embruns","refName":"Brine King's Domain","namespace":"AREA","tradeDisc":"BrineKingsDomain","icon":"","area":{"special":true}}
 {"name":"Chambres funéraires","refName":"Burial Chambers","namespace":"AREA","tradeDisc":"43016","icon":"","area":{"screenshot":"https://i.imgur.com/Wp5GF44.jpg"}}
 {"name":"Cage","refName":"Cage","namespace":"AREA","tradeDisc":"3883","icon":"","area":{"screenshot":"https://i.imgur.com/r20ygP0.jpg"}}
 {"name":"Caldeira","refName":"Caldera","namespace":"AREA","tradeDisc":"64414","icon":"","area":{"screenshot":"https://i.imgur.com/dAFd7cQ.jpg"}}
@@ -34,7 +34,7 @@
 {"name":"Canal","refName":"Channel","namespace":"AREA","tradeDisc":"22278","icon":"","area":{"screenshot":"https://i.imgur.com/qNjNqND.jpg"}}
 {"name":"Grand château","refName":"Chateau","namespace":"AREA","tradeDisc":"39459","icon":"","area":{"screenshot":"https://i.imgur.com/9K7IyE3.jpg"}}
 {"name":"Grand-place","refName":"City Square","namespace":"AREA","tradeDisc":"44762","icon":"","area":{"screenshot":"https://i.imgur.com/dpMpwdP.jpg"}}
-{"name":"Clam-infested Shelf","refName":"Clam-infested Shelf","namespace":"AREA","tradeDisc":"ClamInfestedShelf","icon":"","area":{"special":true}}
+{"name":"Plateau infesté de palourdes","refName":"Clam-infested Shelf","namespace":"AREA","tradeDisc":"ClamInfestedShelf","icon":"","area":{"special":true}}
 {"name":"Rivière gelée","refName":"Cold River","namespace":"AREA","tradeDisc":"38080","icon":"","area":{"screenshot":"https://i.imgur.com/ld3HPg6.jpg"}}
 {"name":"Colonnades","refName":"Colonnade","namespace":"AREA","tradeDisc":"31349","icon":"","area":{"screenshot":"https://i.imgur.com/5uaNQwH.jpg"}}
 {"name":"Colisée","refName":"Colosseum","namespace":"AREA","tradeDisc":"16355","icon":"","area":{"screenshot":"https://i.imgur.com/LYXkjl8.jpg"}}
@@ -55,11 +55,11 @@
 {"name":"Désert","refName":"Desert","namespace":"AREA","tradeDisc":"34997","icon":"","area":{"screenshot":"https://i.imgur.com/BcaiqlN.jpg"}}
 {"name":"Source du désert","refName":"Desert Spring","namespace":"AREA","tradeDisc":"10211","icon":"","area":{"screenshot":"https://i.imgur.com/aDop71B.jpg"}}
 {"name":"Déblai","refName":"Dig","namespace":"AREA","tradeDisc":"43432","icon":"","area":{"screenshot":"https://i.imgur.com/E8Z9yPz.jpg"}}
-{"name":"Diving Shoals","refName":"Diving Shoals","namespace":"AREA","tradeDisc":"DivingShoals","icon":"","area":{"special":true}}
+{"name":"Hauts-fonds plongeants","refName":"Diving Shoals","namespace":"AREA","tradeDisc":"DivingShoals","icon":"","area":{"special":true}}
 {"name":"Mer asséchée","refName":"Dry Sea","namespace":"AREA","tradeDisc":"53637","icon":"","area":{"screenshot":"https://i.imgur.com/JGfVZsB.jpg"}}
 {"name":"Dunes","refName":"Dunes","namespace":"AREA","tradeDisc":"53116","icon":"","area":{"screenshot":"https://i.imgur.com/88Gm4iq.jpg"}}
 {"name":"Donjon","refName":"Dungeon","namespace":"AREA","tradeDisc":"64256","icon":"","area":{"screenshot":"https://i.imgur.com/GRI8xIf.jpg"}}
-{"name":"Eldritch Depths","refName":"Eldritch Depths","namespace":"AREA","tradeDisc":"EldritchDepths","icon":"","area":{"special":true}}
+{"name":"Profondeurs surnaturelles","refName":"Eldritch Depths","namespace":"AREA","tradeDisc":"EldritchDepths","icon":"","area":{"special":true}}
 {"name":"Estuaire","refName":"Estuary","namespace":"AREA","tradeDisc":"40753","icon":"","area":{"screenshot":"https://i.imgur.com/LNLcK2Z.jpg"}}
 {"name":"Excavation","refName":"Excavation","namespace":"AREA","tradeDisc":"33025","icon":"","area":{"screenshot":"https://i.imgur.com/A3E80Du.jpg"}}
 {"name":"Fabrique","refName":"Factory","namespace":"AREA","tradeDisc":"41763","icon":"","area":{"screenshot":"https://i.imgur.com/zOsCvpG.jpg"}}
@@ -78,13 +78,13 @@
 {"name":"Sépultures","refName":"Graveyard","namespace":"AREA","tradeDisc":"53902","icon":"","area":{"screenshot":"https://i.imgur.com/gm0UolB.jpg"}}
 {"name":"Grotte","refName":"Grotto","namespace":"AREA","tradeDisc":"19420","icon":"","area":{"screenshot":"https://i.imgur.com/N7P59cb.jpg"}}
 {"name":"Manoir hanté","refName":"Haunted Mansion","namespace":"AREA","tradeDisc":"1215","icon":"","area":{"screenshot":"https://i.imgur.com/TyBueyN.jpg"}}
-{"name":"Hazardous Depths","refName":"Hazardous Depths","namespace":"AREA","tradeDisc":"HazardousDepths","icon":"","area":{"special":true}}
+{"name":"Profondeurs dangereuses","refName":"Hazardous Depths","namespace":"AREA","tradeDisc":"HazardousDepths","icon":"","area":{"special":true}}
 {"name":"Iceberg","refName":"Iceberg","namespace":"AREA","tradeDisc":"59084","icon":"","area":{"screenshot":"https://i.imgur.com/9g2hpKu.jpg"}}
-{"name":"Infested Bathyspheres","refName":"Infested Bathyspheres","namespace":"AREA","tradeDisc":"InfestedBathyspheres","icon":"","area":{"special":true}}
+{"name":"Bathysphères infestées","refName":"Infested Bathyspheres","namespace":"AREA","tradeDisc":"InfestedBathyspheres","icon":"","area":{"special":true}}
 {"name":"Vallée infestée","refName":"Infested Valley","namespace":"AREA","tradeDisc":"24414","icon":"","area":{"screenshot":"https://i.imgur.com/9FiIb93.jpg"}}
 {"name":"Temple d'ivoire","refName":"Ivory Temple","namespace":"AREA","tradeDisc":"16982","icon":"","area":{"screenshot":"https://i.imgur.com/gl7ODl5.jpg"}}
 {"name":"Vallée de la jungle","refName":"Jungle Valley","namespace":"AREA","tradeDisc":"4003","icon":"","area":{"screenshot":"https://i.imgur.com/O4q6Op8.jpg"}}
-{"name":"Kishara's Rest","refName":"Kishara's Rest","namespace":"AREA","tradeDisc":"KisharasRest","icon":"","area":{"special":true}}
+{"name":"Repos de Kishara","refName":"Kishara's Rest","namespace":"AREA","tradeDisc":"KisharasRest","icon":"","area":{"special":true}}
 {"name":"Laboratoire","refName":"Laboratory","namespace":"AREA","tradeDisc":"43561","icon":"","area":{"screenshot":"https://i.imgur.com/3wlWzSX.jpg"}}
 {"name":"Antre","refName":"Lair","namespace":"AREA","tradeDisc":"8823","icon":"","area":{"screenshot":"https://i.imgur.com/Uj6Ef71.jpg"}}
 {"name":"Chambre lavique","refName":"Lava Chamber","namespace":"AREA","tradeDisc":"7088","icon":"","area":{"screenshot":"https://i.imgur.com/XR1YVVq.jpg"}}
@@ -92,7 +92,7 @@
 {"name":"Ligne de ley","refName":"Leyline","namespace":"AREA","tradeDisc":"12937","icon":"","area":{"screenshot":"https://i.imgur.com/5UjUxso.jpg"}}
 {"name":"Phare","refName":"Lighthouse","namespace":"AREA","tradeDisc":"43308","icon":"","area":{"screenshot":"https://i.imgur.com/40gXcr4.jpg"}}
 {"name":"Poste d'observation","refName":"Lookout","namespace":"AREA","tradeDisc":"48831","icon":"","area":{"screenshot":"https://i.imgur.com/QNuOzHT.jpg"}}
-{"name":"Lost Ruins","refName":"Lost Ruins","namespace":"AREA","tradeDisc":"LostRuins","icon":"","area":{"special":true}}
+{"name":"Ruines perdues","refName":"Lost Ruins","namespace":"AREA","tradeDisc":"LostRuins","icon":"","area":{"special":true}}
 {"name":"Malformation","refName":"Malformation","namespace":"AREA","tradeDisc":"3421","icon":"","area":{"screenshot":"https://i.imgur.com/bVcvxGD.jpg"}}
 {"name":"Marécage","refName":"Marshes","namespace":"AREA","tradeDisc":"42115","icon":"","area":{"screenshot":"https://i.imgur.com/25Oc1GQ.jpg"}}
 {"name":"Mausolée","refName":"Mausoleum","namespace":"AREA","tradeDisc":"57831","icon":"","area":{"screenshot":"https://i.imgur.com/lppiQiQ.jpg"}}
@@ -108,7 +108,7 @@
 {"name":"Sanctuaire abandonné","refName":"Overgrown Shrine","namespace":"AREA","tradeDisc":"26468","icon":"","area":{"screenshot":"https://i.imgur.com/vXh4QKk.jpg"}}
 {"name":"Palais","refName":"Palace","namespace":"AREA","tradeDisc":"51878","icon":"","area":{"screenshot":"https://i.imgur.com/U7ABlGw.jpg"}}
 {"name":"Parc","refName":"Park","namespace":"AREA","tradeDisc":"32613","icon":"","area":{"screenshot":"https://i.imgur.com/HlFwmtM.jpg"}}
-{"name":"Pelagic Abyss","refName":"Pelagic Abyss","namespace":"AREA","tradeDisc":"PelagicAbyss","icon":"","area":{"special":true}}
+{"name":"Abysse pélagique","refName":"Pelagic Abyss","namespace":"AREA","tradeDisc":"PelagicAbyss","icon":"","area":{"special":true}}
 {"name":"Enclos","refName":"Pen","namespace":"AREA","tradeDisc":"19828","icon":"","area":{"screenshot":"https://i.imgur.com/FYax6WD.jpg"}}
 {"name":"Péninsule","refName":"Peninsula","namespace":"AREA","tradeDisc":"57690","icon":"","area":{"screenshot":"https://i.imgur.com/5YycEWs.jpg"}}
 {"name":"Fantasmagorie","refName":"Phantasmagoria","namespace":"AREA","tradeDisc":"47634","icon":"","area":{"screenshot":"https://i.imgur.com/yCDYKxA.jpg"}}
@@ -127,8 +127,8 @@
 {"name":"Chambres reliquaires","refName":"Relic Chambers","namespace":"AREA","tradeDisc":"35162","icon":"","area":{"screenshot":"https://i.imgur.com/jsNHNa1.jpg"}}
 {"name":"Résidence","refName":"Residence","namespace":"AREA","tradeDisc":"4755","icon":"","area":{"screenshot":"https://i.imgur.com/FF5qpbI.jpg"}}
 {"name":"Scriptorium","refName":"Scriptorium","namespace":"AREA","tradeDisc":"53075","icon":"","area":{}}
-{"name":"Sea Pillars","refName":"Sea Pillars","namespace":"AREA","tradeDisc":"SeaPillars","icon":"","area":{"special":true}}
-{"name":"Seafloor Ridges","refName":"Seafloor Ridges","namespace":"AREA","tradeDisc":"SeafloorRidges","icon":"","area":{}}
+{"name":"Piliers marins","refName":"Sea Pillars","namespace":"AREA","tradeDisc":"SeaPillars","icon":"","area":{"special":true}}
+{"name":"Crêtes sous-marines","refName":"Seafloor Ridges","namespace":"AREA","tradeDisc":"SeafloorRidges","icon":"","area":{}}
 {"name":"Sépulcre","refName":"Sepulchre","namespace":"AREA","tradeDisc":"27716","icon":"","area":{"screenshot":"https://i.imgur.com/I8et20T.jpg"}}
 {"name":"Chantier naval","refName":"Shipyard","namespace":"AREA","tradeDisc":"11724","icon":"","area":{"screenshot":"https://i.imgur.com/J5hM5mR.jpg"}}
 {"name":"Littoral","refName":"Shore","namespace":"AREA","tradeDisc":"22593","icon":"","area":{"screenshot":"https://i.imgur.com/HNPAnu9.jpg"}}
@@ -142,7 +142,7 @@
 {"name":"Geysers de soufre","refName":"Sulphur Vents","namespace":"AREA","tradeDisc":"6074","icon":"","area":{"screenshot":"https://i.imgur.com/D3sc6Dg.jpg"}}
 {"name":"Sommet","refName":"Summit","namespace":"AREA","tradeDisc":"60634","icon":"","area":{"screenshot":"https://i.imgur.com/6aL5NhS.jpg"}}
 {"name":"Cité engloutie","refName":"Sunken City","namespace":"AREA","tradeDisc":"11215","icon":"","area":{"screenshot":"https://i.imgur.com/QAoHzcR.jpg"}}
-{"name":"Sunken Totems","refName":"Sunken Totems","namespace":"AREA","tradeDisc":"SunkenTotems","icon":"","area":{"special":true}}
+{"name":"Totems engloutis","refName":"Sunken Totems","namespace":"AREA","tradeDisc":"SunkenTotems","icon":"","area":{"special":true}}
 {"name":"Temple","refName":"Temple","namespace":"AREA","tradeDisc":"45792","icon":"","area":{"screenshot":"https://i.imgur.com/g3LZ4zC.jpg"}}
 {"name":"Terrasses","refName":"Terrace","namespace":"AREA","tradeDisc":"42558","icon":"","area":{"screenshot":"https://i.imgur.com/dZZGyRt.jpg"}}
 {"name":"Théâtre des Mensonges","refName":"Theatre of Lies","namespace":"AREA","icon":"","area":{}}
@@ -152,8 +152,8 @@
 {"name":"Île tropicale","refName":"Tropical Island","namespace":"AREA","tradeDisc":"5647","icon":"","area":{"screenshot":"https://i.imgur.com/wraPtBT.jpg"}}
 {"name":"Rivière souterraine","refName":"Underground River","namespace":"AREA","tradeDisc":"20216","icon":"","area":{"screenshot":"https://i.imgur.com/8k4Dug4.jpg"}}
 {"name":"Mer souterraine","refName":"Underground Sea","namespace":"AREA","tradeDisc":"18545","icon":"","area":{"screenshot":"https://i.imgur.com/ELUmbfz.jpg"}}
-{"name":"Undersea Groves","refName":"Undersea Groves","namespace":"AREA","tradeDisc":"UnderseaGroves","icon":"","area":{}}
-{"name":"Unremarkable Seabed","refName":"Unremarkable Seabed","namespace":"AREA","tradeDisc":"UnremarkableSeabed","icon":"","area":{"special":true}}
+{"name":"Bosquets sous-marins","refName":"Undersea Groves","namespace":"AREA","tradeDisc":"UnderseaGroves","icon":"","area":{}}
+{"name":"Fond marin quelconque","refName":"Unremarkable Seabed","namespace":"AREA","tradeDisc":"UnremarkableSeabed","icon":"","area":{"special":true}}
 {"name":"Pyramide vaal","refName":"Vaal Pyramid","namespace":"AREA","tradeDisc":"28018","icon":"","area":{"screenshot":"https://i.imgur.com/RM2CNDk.jpg"}}
 {"name":"Chambre forte","refName":"Vault","namespace":"AREA","tradeDisc":"57839","icon":"","area":{"screenshot":"https://i.imgur.com/zdIUUwN.jpg"}}
 {"name":"Villa","refName":"Villa","namespace":"AREA","tradeDisc":"2144","icon":"","area":{"screenshot":"https://i.imgur.com/EB0wTDF.jpg"}}
