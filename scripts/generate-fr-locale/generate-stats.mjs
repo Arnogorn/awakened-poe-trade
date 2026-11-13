@@ -238,6 +238,96 @@ function translateSupportRangeAnnotation (annotation) {
   return `(${supportGemNames.get(m[1]) ?? m[1]}-${supportGemNames.get(m[2]) ?? m[2]})`
 }
 
+// Named entities whose localized name lives in a dedicated game table rather
+// than in StatDescriptions (the stat text IS just the name):
+//  - Mercenary Warrant skills/supports (entries with a `mercenary` field), from
+//    MercenarySkills (no Id column, joined by row index) + MercenarySupports.
+//    Their `advanced` text appends ClientStrings `ModDescriptionLineTier`
+//    (EN " (Tier: {0})", FR " (Palier : {0})").
+//  - Temple of Atzoatl rooms ("Has Room: X"), from IncursionRooms. Tiered rooms
+//    append ClientStrings `IncursionRoomPopupTier` (EN "(Tier {0})", FR "(Palier {0})").
+//  - Expedition Logbook factions ("Has Logbook Faction: X"), from ExpeditionFactions.
+function buildIndexTranslation (tableName) {
+  const loadJson = (lang) => JSON.parse(fs.readFileSync(path.join(__dirname, 'tables', lang, `${tableName}.json`), 'utf-8'))
+  const en = loadJson('English')
+  const fr = loadJson('French')
+  if (en.length !== fr.length) {
+    throw new Error(`${tableName}.json row count mismatch (en=${en.length}, fr=${fr.length}) - index-based matching is unsafe, aborting.`)
+  }
+  const enNameToFr = new Map()
+  en.forEach((r, i) => {
+    if (r.Name && fr[i].Name && !enNameToFr.has(r.Name)) enNameToFr.set(r.Name, fr[i].Name)
+  })
+  return enNameToFr
+}
+
+const mercenaryNames = new Map([...buildNameTranslation('MercenarySupports'), ...buildIndexTranslation('MercenarySkills')])
+const templeRoomNames = buildNameTranslation('IncursionRooms')
+const logbookFactionNames = buildNameTranslation('ExpeditionFactions')
+
+function clientStringPair (id) {
+  const en = clientStringsEn.get(id)
+  const fr = clientStringsFr.get(id)
+  if (!en || !fr || !en.includes('{0}') || !fr.includes('{0}')) throw new Error(`ClientStrings ${id} missing or without {0}`)
+  return { en, fr }
+}
+const MOD_TIER = clientStringPair('ModDescriptionLineTier')
+const ROOM_TIER = clientStringPair('IncursionRoomPopupTier')
+
+// Builds a regex from a ClientStrings suffix like " (Tier: {0})", capturing {0}.
+function suffixRegex (template) {
+  const [pre, post] = template.split('{0}')
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`^(.+)${esc(pre)}(\\d+)${esc(post)}$`)
+}
+const MOD_TIER_RE = suffixRegex(MOD_TIER.en)
+const ROOM_TIER_RE = suffixRegex(ROOM_TIER.en.startsWith(' ') ? ROOM_TIER.en : ' ' + ROOM_TIER.en)
+const roomTierFr = n => (ROOM_TIER.fr.startsWith(' ') ? '' : ' ') + ROOM_TIER.fr.replace('{0}', n)
+
+function translateNamedEntity (entry, matcher, trimmed) {
+  if (entry.mercenary) {
+    const frName = mercenaryNames.get(trimmed)
+    if (!frName) return null
+    let advanced
+    if (matcher.advanced !== undefined) {
+      const m = matcher.advanced.match(MOD_TIER_RE)
+      if (m && m[1] === trimmed) advanced = frName + MOD_TIER.fr.replace('{0}', m[2])
+    }
+    return { text: frName, source: 'game-data-mercenary', advanced }
+  }
+  if (entry.ref.startsWith('Has Room: ')) {
+    const m = trimmed.match(ROOM_TIER_RE)
+    const frName = templeRoomNames.get(m ? m[1] : trimmed)
+    if (!frName) return null
+    return { text: m ? frName + roomTierFr(m[2]) : frName, source: 'game-data-temple' }
+  }
+  if (entry.ref.startsWith('Has Logbook Faction: ')) {
+    const frName = logbookFactionNames.get(trimmed)
+    return frName ? { text: frName, source: 'game-data-logbook' } : null
+  }
+  return null
+}
+
+// Impossible Escape: "Passive Skills in Radius of {keystone} can be Allocated
+// without being connected to your tree / Passage". The game's own block
+// (`local_unique_jewel_disconnected_passives_can_be_allocated_around_keystone_hash`)
+// has a `passive_hash` placeholder that the client fills from PassiveSkills,
+// exactly like "Allocates {0}". Set in main() from the parsed blocks, so the
+// French text comes straight from the game file. Note: the French text has a
+// single line break before "Passage" where English has two.
+const PASSIVE_HASH_TEMPLATE_IDS = ['local_unique_jewel_disconnected_passives_can_be_allocated_around_keystone_hash']
+let passiveHashTemplates = []
+
+function translatePassiveHashTemplate (trimmed) {
+  for (const { en, fr } of passiveHashTemplates) {
+    const [pre, post] = en.split('#')
+    if (trimmed.length <= pre.length + post.length || !trimmed.startsWith(pre) || !trimmed.endsWith(post)) continue
+    const frName = passiveSkillNames.get(trimmed.slice(pre.length, trimmed.length - post.length))
+    if (frName) return fr.replace('#', frName)
+  }
+  return null
+}
+
 const SMALL_PASSIVE_GRANT_EN = 'Added Small Passive Skills grant: '
 const SMALL_PASSIVE_GRANT_FR = 'Les Passifs mineurs ajoutés octroient: '
 
@@ -376,7 +466,7 @@ function translateGemNameRangeAnnotation (annotation) {
 // or null if nothing matched (kept in English). `matcher` is the raw English
 // matcher object (not just its `.string`), needed so successful branches can
 // also derive `matcher.advanced`'s French counterpart (see deriveAdvancedText).
-function translateMatcherString (matcher, textIndex) {
+function translateMatcherString (matcher, textIndex, entry) {
   const str = matcher.string
   const trimmed = str.trim()
   const trailingSpace = str.length !== trimmed.length ? str.slice(trimmed.length) : ''
@@ -385,6 +475,18 @@ function translateMatcherString (matcher, textIndex) {
     const text = CONFIRMED_TEXT_OVERRIDES[trimmed] + trailingSpace
     const advanced = deriveAdvancedText(str, matcher.advanced, text)
     return { text, source: 'game-data', advanced }
+  }
+
+  // Named entities first: for these entries the stat text is only a name, and
+  // its dedicated table is the authoritative source (see translateNamedEntity).
+  if (entry) {
+    const named = translateNamedEntity(entry, matcher, trimmed)
+    if (named) return { ...named, text: named.text + trailingSpace }
+  }
+
+  const passiveHashFr = translatePassiveHashTemplate(trimmed)
+  if (passiveHashFr) {
+    return { text: passiveHashFr + trailingSpace, source: 'game-data-passive' }
   }
 
   const candidates = textIndex.get(trimmed)
@@ -533,12 +635,22 @@ const TIMELESS_JEWEL_HISTORIC_ADVANCED = {
 function main () {
   const blocks = loadAllBlocks()
   const textIndex = buildEnglishTextIndex(blocks)
+  passiveHashTemplates = PASSIVE_HASH_TEMPLATE_IDS.map(id => {
+    const block = blocks.find(b => b.statIds.length === 1 && b.statIds[0] === id)
+    const en = block?.langs.English?.[0]?.text
+    const fr = block?.langs.French?.[0]?.text
+    if (!en || !fr || en.split('#').length !== 2 || fr.split('#').length !== 2) {
+      console.warn(`  [warn] passive_hash template ${id} not found or unexpected shape - skipped`)
+      return null
+    }
+    return { en, fr }
+  }).filter(Boolean)
 
   const enRaw = fs.readFileSync(path.join(REPO_DATA, 'en', 'stats.ndjson'), 'utf-8')
     .split('\n').filter(Boolean).map(line => JSON.parse(line))
 
   let totalMatchers = 0
-  const countBySource = { 'game-data': 0, 'game-data-passive': 0, 'game-data-gem': 0, 'game-data-small-passive-grant': 0, 'game-data-presence': 0, 'game-data-support': 0, 'game-data-gemname': 0, 'pseudo-label': 0 }
+  const countBySource = { 'game-data': 0, 'game-data-passive': 0, 'game-data-gem': 0, 'game-data-small-passive-grant': 0, 'game-data-presence': 0, 'game-data-support': 0, 'game-data-gemname': 0, 'game-data-mercenary': 0, 'game-data-temple': 0, 'game-data-logbook': 0, 'pseudo-label': 0 }
   const untranslated = []
   const pseudoLabelUsed = []
   let advancedDerived = 0
@@ -548,7 +660,7 @@ function main () {
     const advancedOverride = TIMELESS_JEWEL_HISTORIC_ADVANCED[entry.ref]
     const newMatchers = entry.matchers.map(m => {
       totalMatchers++
-      const result = translateMatcherString(m, textIndex)
+      const result = translateMatcherString(m, textIndex, entry)
       if (result != null) {
         countBySource[result.source]++
         if (result.source === 'pseudo-label') {
@@ -589,16 +701,19 @@ function main () {
   const fromSmallPassiveGrant = countBySource['game-data-small-passive-grant']
   const fromPresence = countBySource['game-data-presence'] + countBySource['game-data-support'] + countBySource['game-data-gemname']
   const fromPseudoLabel = countBySource['pseudo-label']
-  const translatedMatchers = fromGameData + fromPassive + fromGem + fromSmallPassiveGrant + fromPresence + fromPseudoLabel
+  const fromNamedTables = countBySource['game-data-mercenary'] + countBySource['game-data-temple'] + countBySource['game-data-logbook']
+  const fromAllGame = fromGameData + fromPassive + fromGem + fromSmallPassiveGrant + fromPresence + fromNamedTables
+  const translatedMatchers = fromAllGame + fromPseudoLabel
   const pct = (100 * translatedMatchers / totalMatchers).toFixed(1)
-  const pctGameData = (100 * (fromGameData + fromPassive + fromGem + fromSmallPassiveGrant + fromPresence) / totalMatchers).toFixed(1)
+  const pctGameData = (100 * fromAllGame / totalMatchers).toFixed(1)
   const reportLines = [
     'stats.ndjson (fr) coverage report',
     `generated: ${new Date().toISOString()}`,
     `translated matchers: ${translatedMatchers} / ${totalMatchers} (${pct}%)`,
-    `  - from real game data (Metadata/StatDescriptions/*.txt, French client text): ${fromGameData + fromPassive + fromGem + fromSmallPassiveGrant + fromPresence} (${pctGameData}%)`,
+    `  - from real game data (Metadata/StatDescriptions/*.txt, French client text): ${fromAllGame} (${pctGameData}%)`,
     `      - direct StatDescriptions text match: ${fromGameData}`,
-    `      - "Allocates {passive}" via PassiveSkills table join: ${fromPassive}`,
+    `      - "Allocates {passive}" / Impossible Escape "{keystone}" via PassiveSkills table join: ${fromPassive}`,
+    `      - names from dedicated tables (MercenarySkills/Supports ${countBySource['game-data-mercenary']}, IncursionRooms ${countBySource['game-data-temple']}, ExpeditionFactions ${countBySource['game-data-logbook']}): ${fromNamedTables}`,
     `      - "+# to Level of all {gem} Gems" via BaseItemTypes table join: ${fromGem}`,
     `      - "Added Small Passive Skills grant: {sub-stat}" via ClientStrings label + StatDescriptions template join: ${fromSmallPassiveGrant}`,
     `      - "While a Unique Enemy / Pinnacle Atlas Boss is in your Presence, {stat}" via ClientStrings wrapper + StatDescriptions join: ${fromPresence}`,
@@ -616,7 +731,7 @@ function main () {
 
   console.log('Wrote renderer/public/data/fr/stats.ndjson')
   console.log(`Coverage: ${translatedMatchers} / ${totalMatchers} matchers (${pct}%)`)
-  console.log(`  - from real game data: ${fromGameData + fromPassive + fromGem} (${pctGameData}%)`)
+  console.log(`  - from real game data: ${fromAllGame} (${pctGameData}%)`)
   console.log(`  - hand-translated pseudo labels (unverified): ${fromPseudoLabel}`)
   console.log('Full report: scripts/generate-fr-locale/untranslated-stats-fr.report.txt')
 }

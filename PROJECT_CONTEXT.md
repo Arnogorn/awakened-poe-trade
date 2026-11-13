@@ -388,6 +388,21 @@ Poussé sur `origin/master` (`7b8e849`). Commits de la session : `92ccc2d` (merg
 
 **À faire à la sortie de la saison suivante** : mettre à jour PoE (Steam), réenregistrer les 4 JSON de l'API, `git fetch upstream` + merge dès le "update data" de SnosMe, `npm run generate:all`, puis relister `Metadata/StatDescriptions` dans l'index pour repérer de nouveaux fichiers.
 
+### 9.12 Session du 2026-11-13 : mercenaires, Temple, Logbook, Impossible Escape (tables dédiées du jeu)
+
+Les noms restés en anglais en 9.11 avaient bien une source dans le jeu, simplement pas extraite. Tables trouvées en listant le schéma `pathofexile-dat-schema` (`SCHEMA_URL`) par nom, ajoutées à `extract-game-data.mjs` :
+- `MercenaryBuilds` (Id/Name) → items `MERCENARY_BUILD`, 64/64 (les 2 restants ont le même nom en fr). Ex. Stormhand → Électromancienne, variantes "Infamous" = lignes à part (Électromancienne infâme).
+- `MercenarySkills` (pas de colonne Id, jointure par index avec contrôle du nombre de lignes, comme `Words`) + `MercenarySupports` (Id/Name) → toutes les entrées de `stats.ndjson` ayant un champ `mercenary`. Prioritaire sur l'ancienne jointure `BaseItemTypes` (noms de gemmes, non vérifiée). Champ `advanced` : suffixe `ClientStrings` `ModDescriptionLineTier` (EN " (Tier: {0})", FR " (Palier : {0})").
+- `IncursionRooms` → "Has Room: X" (85), suffixe `ClientStrings` `IncursionRoomPopupTier` (EN "(Tier {0})", FR "(Palier {0})").
+- `ExpeditionFactions` → "Has Logbook Faction: X" (4).
+- Impossible Escape ("Passive Skills in Radius of {keystone}…", 48) : texte FR du bloc du jeu `local_unique_jewel_disconnected_passives_can_be_allocated_around_keystone_hash` (lu dans les blocs parsés, pas recopié), placeholder `passive_hash` rempli via `PassiveSkills`, même mécanisme que le client et que "Allocates {0}". Le FR n'a qu'un saut de ligne avant "Passage" (l'anglais en a deux).
+
+Contrôle de non-régression contre `HEAD` : 401 nouvelles traductions, 0 perdue, 2 modifiées (annotation "(Tier: 3)" → "(Palier : 3)" sur Combustion, "Orbe des orages" → "Orbes des orages", qui supprime un écart jeu/site).
+
+**Couverture** : stats 70/11539 matchers encore en anglais après l'API (~99.4%), items 99.6% avant l'API (restent 22 uniques). Restent surtout : mods voilés (Veiled, ~20), soutiens Arcane Surge/Behead/Bloodthirst/Bonechill/Mark On Hit/Trinity des familles "Supported by" (~30, nom absent de la jointure `BaseItemTypes`), niveaux de métiers Heist (~10, table `HeistJobs` déjà extraite mais pas branchée sur ces stats), quelques stats anciennes (châsses rouges/vertes/bleues).
+
+**Non vérifié en jeu** : noms de mercenaires sur un vrai Contrat de mercenaire (texte affiché = table `MercenarySkills/Supports` ?), suffixe "(Palier N)" des salles sur une vraie Chronique d'Atzoatl, et absence d'élision dans "dans un Rayon de Acrobaties" (le client insère le nom tel quel, comme "au nom de Ahuana").
+
 ---
 
 ## 10. Références externes

@@ -93,7 +93,17 @@ async function main () {
       // Area names, for items.ndjson AREA entries (maps' areas, e.g. "Abyssal Plain").
       { name: 'WorldAreas', columns: ['Id', 'Name'] },
       // Deepwater (season 2026-09) chart areas, e.g. "Abyssal Plain": not WorldAreas rows.
-      { name: 'DeepwaterRooms', columns: ['Id', 'Name'] }
+      { name: 'DeepwaterRooms', columns: ['Id', 'Name'] },
+      // Mercenary Warrant contents: build names (items.ndjson MERCENARY_BUILD),
+      // skill and support names (stats.ndjson entries with a `mercenary` field).
+      // MercenarySkills has no Id column: en/fr rows are joined by index.
+      { name: 'MercenaryBuilds', columns: ['Id', 'Name'] },
+      { name: 'MercenarySkills', columns: ['Name'] },
+      { name: 'MercenarySupports', columns: ['Id', 'Name'] },
+      // Temple of Atzoatl room names ("Has Room: X" pseudo filters).
+      { name: 'IncursionRooms', columns: ['Id', 'Name'] },
+      // Expedition faction names ("Has Logbook Faction: X" pseudo filters).
+      { name: 'ExpeditionFactions', columns: ['Id', 'Name'] }
     ]
   }, path.join(__dirname, 'tables'), loader)
 
